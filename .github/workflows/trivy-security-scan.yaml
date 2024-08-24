@@ -8,7 +8,7 @@ jobs:
   trivy-security-scan:
     runs-on: ubuntu-latest
     steps:
-      - run: touch me # TODO Are: Hva er dette egentlig? Unødvendig?
+#      - run: touch me # TODO Are: Hva er dette egentlig? Unødvendig?
       - uses: nais/login@v0
         with:
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
