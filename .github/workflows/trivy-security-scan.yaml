@@ -1,4 +1,3 @@
-# TODO Are: Skal vi øegg til name her?
 on:
   workflow_call:
     inputs:
@@ -6,10 +5,10 @@ on:
         required: true
         type: string
 jobs:
-  trivy:
+  trivy-security-scan:
     runs-on: ubuntu-latest
     steps:
-      - run: touch me # TODO Are: name istedenfor run?
+      - run: touch me # TODO Are: Hva er dette egentlig? Unødvendig?
       - uses: nais/login@v0
         with:
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
