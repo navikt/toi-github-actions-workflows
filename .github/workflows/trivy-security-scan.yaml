@@ -7,9 +7,6 @@ on:
         type: string
 jobs:
   trivy:
-    permissions:
-      id-token: write
-      security-events: write
     runs-on: ubuntu-latest
     steps:
       - run: touch me # TODO Are: name istedenfor run?
