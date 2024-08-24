@@ -8,9 +8,6 @@ on:
 jobs:
   trivy:
     runs-on: ubuntu-latest
-#    permissions:
-#      security-events: write # Push Trivy/Sarif to Github Security
-#      packages: read # TODO Are: Unødvenidg og kan slettes?
     steps:
       - run: touch me # TODO Are: name istedenfor run?
       - uses: nais/login@v0
