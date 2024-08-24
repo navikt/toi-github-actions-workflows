@@ -1,4 +1,3 @@
-# Hva er dette
 [Reusable workflows for Github Actions](https://docs.github.com/en/actions/sharing-automations/reusing-workflows)
 
 ## Henvendelser
