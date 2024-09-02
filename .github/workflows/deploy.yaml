@@ -8,11 +8,12 @@ on:
         required: false
         type: string
 
+env:
+  FEATURE-BRANCH: 'refs/heads/${{ inputs.deploy-to-dev-if-branch-name-is }}'
+
 jobs:
   deploy-to-dev:
     name: Deploy to dev
-    env:
-      FEATURE-BRANCH: 'refs/heads/${{ inputs.deploy-to-dev-if-branch-name-is }}'
     if: ${{ github.ref == 'refs/heads/main' || github.ref == env.FEATURE-BRANCH }}
     runs-on: ubuntu-latest
     steps:
