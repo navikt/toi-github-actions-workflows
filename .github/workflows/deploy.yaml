@@ -13,7 +13,7 @@ jobs:
     name: Deploy to dev
     env:
       feature-branch: ${{ format('refs/heads/{0}', inputs.branch) }}
-    if: github.ref == 'refs/heads/main' || github.ref == env.feature-branch
+    if: github.ref == 'refs/heads/main' || github.ref == '${{ env.feature-branch }}'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
