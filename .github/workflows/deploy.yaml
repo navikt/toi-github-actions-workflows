@@ -12,11 +12,10 @@ jobs:
   deploy-to-dev:
     name: Deploy to dev
     env:
-      FEATURE-BRANCH: ${{ inputs.deploy-to-dev-if-branch-name-is }}
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/${{ env.FEATURE-BRANCH }}'
+      FEATURE-BRANCH: 'refs/heads/${{ inputs.deploy-to-dev-if-branch-name-is }}'
+    if: github.ref == 'refs/heads/main' || github.ref == env.FEATURE-BRANCH
     runs-on: ubuntu-latest
     steps:
-      - run: env # TODO Are: Slett etter debuggin av deploy til dev av feature branch
       - uses: actions/checkout@v4
       - uses: nais/deploy/actions/deploy@v1
         env:
