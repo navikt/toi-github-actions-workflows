@@ -4,15 +4,16 @@ on:
       image:
         required: true
         type: string
-      branch: # Git feature-branch name
+      deploy-to-dev-if-branch-name-is: # Git feature-branch name
         required: false
         type: string
 
 jobs:
   deploy-to-dev:
     name: Deploy to dev
-    if: github.ref == 'refs/heads/main' || github.ref == '${{ format("refs/heads/{0}", inputs.branch) }}'
-#    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/${{ inputs.branch }}'
+    env:
+      feature-branch: ${{ format('refs/heads/{0}', inputs.branch) }}
+    if: github.ref == 'refs/heads/main' || github.ref == env.feature-branch
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
