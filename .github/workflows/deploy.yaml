@@ -13,7 +13,7 @@ jobs:
     name: Deploy to dev
     env:
       FEATURE-BRANCH: ${{ inputs.deploy-to-dev-if-branch-name-is }}
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/$FEATURE-BRANCH'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/${{ env.FEATURE-BRANCH }}'
     runs-on: ubuntu-latest
     steps:
       - run: env # TODO Are: Slett etter debuggin av deploy til dev av feature branch
