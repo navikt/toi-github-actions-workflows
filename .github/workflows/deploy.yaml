@@ -16,6 +16,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/$FEATURE-BRANCH'
     runs-on: ubuntu-latest
     steps:
+      - run: env # TODO Are: Slett etter debuggin av deploy til dev av feature branch
       - uses: actions/checkout@v4
       - uses: nais/deploy/actions/deploy@v1
         env:
