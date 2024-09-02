@@ -4,7 +4,7 @@ on:
       image:
         required: true
         type: string
-      deploy-to-dev-if-branch-name-is: # Git feature-branch name
+      deploy-to-dev-if-branch-name-is:
         required: false
         type: string
 
@@ -12,8 +12,8 @@ jobs:
   deploy-to-dev:
     name: Deploy to dev
     env:
-      feature-branch: ${{ format('refs/heads/{0}', inputs.branch) }}
-    if: github.ref == 'refs/heads/main' || github.ref == '$feature-branch'
+      FEATURE-BRANCH: ${{ deploy-to-dev-if-branch-name-is }}
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/$FEATURE-BRANCH'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
