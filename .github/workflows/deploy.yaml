@@ -11,7 +11,8 @@ on:
 jobs:
   deploy-to-dev:
     name: Deploy to dev
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/${{ inputs.branch }}'
+    if: github.ref == 'refs/heads/main' || github.ref == '${{ format("refs/heads/{0}", inputs.branch) }}'
+#    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/${{ inputs.branch }}'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
