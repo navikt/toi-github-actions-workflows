@@ -12,7 +12,7 @@ jobs:
   deploy-to-dev:
     name: Deploy to dev
     env:
-      FEATURE-BRANCH: ${{ deploy-to-dev-if-branch-name-is }}
+      FEATURE-BRANCH: ${{ inputs.deploy-to-dev-if-branch-name-is }}
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/$FEATURE-BRANCH'
     runs-on: ubuntu-latest
     steps:
