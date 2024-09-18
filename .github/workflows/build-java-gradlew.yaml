@@ -1,5 +1,10 @@
 on:
   workflow_call:
+    inputs:
+      java-version:
+        required: true
+        type: string
+        description: "E.g. '17' or '21'"
     outputs:
       image:
         description: "Name of the built Docker image"
@@ -16,7 +21,7 @@ jobs:
       - uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '21'
+          java-version: ${{ inputs.java-version }}
           cache: 'gradle'
 
       - run: ./gradlew build
