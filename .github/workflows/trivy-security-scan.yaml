@@ -18,12 +18,13 @@ jobs:
           team: toi
 
       - run: echo "IMAGE=${{ inputs.image }}" >> $GITHUB_ENV
-      - name: 'Should we scan the image tagged "latest"?'
+      - name: 'Use the image tagged "latest"'
         if: inputs.image == '' && (contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref))
         run: |
           repo_name="${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER}"
           repo_name="$(tr '[:upper:]' '[:lower:]' <<< "$repo_name")"
-          echo "IMAGE=${{ steps.login.outputs.registry }}/$repo_name:latest" >> $GITHUB_OUTPUT
+          registry="${{ steps.login.outputs.registry }}"
+          echo "IMAGE=${registry}/${repo_name}:latest" >> $GITHUB_OUTPUT
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
