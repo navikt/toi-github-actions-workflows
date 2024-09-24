@@ -19,7 +19,7 @@ jobs:
       - name: Print input variables
         env:
           imageParam: ${{ inputs.image }}
-        run: echo 'Image name in workflow call input variable is "$imageParam"'
+        run: echo "Image name is \"$imageParam\""
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
