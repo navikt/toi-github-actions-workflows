@@ -16,6 +16,11 @@ jobs:
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           team: toi
 
+      - name: Print input variables
+        env:
+          imageParam: ${{ inputs.image }}
+        run: echo 'Image name in workflow call input variable is "$imageParam"'
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
