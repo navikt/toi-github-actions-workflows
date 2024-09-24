@@ -24,7 +24,7 @@ jobs:
           repo_name="${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER}"
           repo_name="$(tr '[:upper:]' '[:lower:]' <<< "$repo_name")"
           registry="${{ steps.login.outputs.registry }}"
-          echo "IMAGE=${registry}/${repo_name}:latest" >> $GITHUB_OUTPUT
+          echo "IMAGE=${registry}/${repo_name}:latest" >> $GITHUB_ENV
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
