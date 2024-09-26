@@ -9,7 +9,7 @@ on:
         required: false
         type: string
 jobs:
-  call-build-and-publish:
+  call-build-java-gradlew:
     uses: navikt/toi-github-actions-workflows/.github/workflows/build-java-gradlew.yaml@main
     with:
       java-version: ${{ inputs.java-version }}
@@ -19,7 +19,7 @@ jobs:
     secrets: inherit
 
   call-deploy:
-    needs: call-build-and-publish
+    needs: call-build-java-gradlew
     uses: navikt/toi-github-actions-workflows/.github/workflows/deploy.yaml@main
     with:
       image: ${{ needs.call-build-and-publish.outputs.image }}
@@ -30,7 +30,7 @@ jobs:
     secrets: inherit
 
   call-trivy-security-scan:
-    needs: call-build-and-publish
+    needs: call-build-java-gradlew
     uses: navikt/toi-github-actions-workflows/.github/workflows/trivy-security-scan.yaml@main
     with:
       image: ${{ needs.call-build-and-publish.outputs.image }}

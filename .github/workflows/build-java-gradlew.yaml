@@ -4,7 +4,7 @@ on:
       java-version:
         required: true
         type: string
-        description: "E.g. '17' or '21'"
+        description: "JDK version to be used on the Github workflow runner where the app is built. E.g. '17' or '21'"
     outputs:
       image:
         description: "Name of the built Docker image"
