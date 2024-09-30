@@ -29,6 +29,15 @@ jobs:
           echo "IMAGE=${IMAGE}" # Print to log
           echo "IMAGE=${IMAGE}" >> $GITHUB_ENV
 
+      # To avoid sporadically hitting rate limits in GHCR
+      - name: Cache Trivy DB
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/trivy
+          key: ${{ runner.os }}-trivy-db
+          restore-keys: |
+            ${{ runner.os }}-trivy-db
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
