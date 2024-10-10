@@ -26,15 +26,6 @@ jobs:
 
       - run: ./gradlew build
 
-      # Trivy is used in nais/docker-build-push below. To avoid hitting rate limits in GHCR
-      - name: Cache Trivy DB
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/trivy
-          key: ${{ runner.os }}-trivy-db
-          restore-keys: |
-            ${{ runner.os }}-trivy-db
-
       - uses: nais/docker-build-push@v0
         id: docker
         with:
@@ -44,4 +35,3 @@ jobs:
           dockerfile: Dockerfile
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
-
