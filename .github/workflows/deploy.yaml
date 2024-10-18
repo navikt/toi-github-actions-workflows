@@ -15,9 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: nais/deploy/actions/deploy@v1
+      - uses: nais/deploy/actions/deploy@v2
         env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+# TODO Are: Kan slettes?
+#          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-gcp
           RESOURCE: nais/nais.yaml
           VAR: image=${{ inputs.image }}
@@ -30,10 +31,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: nais/deploy/actions/deploy@v1
+      - uses: nais/deploy/actions/deploy@v2
         env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+# TODO Are: Kan slettes?
+#          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: prod-gcp
           RESOURCE: nais/nais.yaml,nais/alerts.yaml
           VAR: image=${{ inputs.image }}
           VARS: nais/prod-gcp.json
+# TODO Are: Legg til telemetry som anbefalt i eksemplet på https://docs.nais.io/build/how-to/build-and-deploy/#authorize-your-github-repository-for-deployment
+#          TELEMETRY: ${{ steps.docker-build-push.outputs.telemetry }}
