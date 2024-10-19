@@ -22,7 +22,7 @@ jobs:
     needs: call-build-java-gradlew
     uses: navikt/toi-github-actions-workflows/.github/workflows/deploy.yaml@main
     with:
-      image: ${{ needs.call-build-and-publish.outputs.image }}
+      image: ${{ needs.call-build-java-gradlew.outputs.image }}
       deploy-to-dev-if-branch-name-is: ${{ inputs.deploy-to-dev-if-branch-name-is }}
     permissions:
       contents: read
@@ -33,7 +33,7 @@ jobs:
     needs: call-build-java-gradlew
     uses: navikt/toi-github-actions-workflows/.github/workflows/trivy-security-scan.yaml@main
     with:
-      image: ${{ needs.call-build-and-publish.outputs.image }}
+      image: ${{ needs.call-build-java-gradlew.outputs.image }}
     permissions:
       id-token: write
       security-events: write
