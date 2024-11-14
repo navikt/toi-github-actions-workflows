@@ -1,0 +1,126 @@
+on:
+  workflow_call:
+    inputs:
+      app:
+        required: true
+        type: string
+      base-path:
+        required: true
+        type: string
+      deploy-to-dev-if-branch-name-is:
+        required: false
+        type: string
+
+jobs:
+  build:
+    name: 🏗️ Bygg applikasjon
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔄 Hent Kildekode
+        uses: actions/checkout@v4
+
+      - name: 📦 Sett opp Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.14.0'
+          registry-url: 'https://npm.pkg.github.com'
+
+      - name: 📥 Installer Avhengigheter
+        run: |
+          echo "::group::Installerer NPM-pakker"
+          npm ci
+          echo "::endgroup::"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
+
+      - name: 🛠️ Bygg Next.js Applikasjon
+        run: |
+          echo "::group::Bygger Next.js applikasjon"
+          npm run build
+          echo "::endgroup::"
+
+  push-docker-image:
+    name: 🐳 Push Docker-image
+    needs: build
+    runs-on: ubuntu-latest
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) || github.ref == format('refs/heads/{0}', inputs.deploy-to-dev-if-branch-name-is)
+    steps:
+      - name: 🔄 Hent Kildekode
+        uses: actions/checkout@v4
+
+      - name: 🐳 Push Docker-image til GAR
+        id: docker-build-push
+        uses: nais/docker-build-push@v0
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
+        with:
+          team: toi
+          identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
+          project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
+          build_secrets: 'NODE_AUTH_TOKEN=${{ secrets.READER_TOKEN }}'
+          tag: ${{ contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && 'latest' || github.sha }}
+    outputs:
+      image: ${{ steps.docker-build-push.outputs.image }}
+
+  call-trivy-security-scan:
+    name: 🔒 Security Scan
+    needs: push-docker-image
+    uses: navikt/toi-github-actions-workflows/.github/workflows/trivy-security-scan.yaml@main
+    with:
+      image: ${{ needs.push-docker-image.outputs.image }}
+    permissions:
+      id-token: write
+      security-events: write
+    secrets: inherit
+
+  deploy-til-dev:
+    name: 🚀 Deploy til dev-gcp
+    needs:
+      - push-docker-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔄 Hent Kildekode
+        uses: actions/checkout@v4
+
+      - name: 📦 Deploy til Dev
+        uses: nais/deploy/actions/deploy@v2
+        env:
+          CLUSTER: dev-gcp
+          RESOURCE: deploy/dev-gcp.yaml
+          VAR: image=${{ needs.push-docker-image.outputs.image }}
+
+  deploy-til-prod:
+    name: 🚀 Deploy til prod-gcp
+    needs:
+      - push-docker-image
+      - deploy-til-dev
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref)
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔄 Hent Kildekode
+        uses: actions/checkout@v4
+
+      - name: 📦 Deploy til Prod
+        uses: nais/deploy/actions/deploy@v2
+        env:
+          CLUSTER: prod-gcp
+          RESOURCE: deploy/prod-gcp.yaml
+          VAR: image=${{ needs.push-docker-image.outputs.image }}
+
+      - name: 📝 Deployment Oppsummering
+        if: success()
+        run: |
+          echo "## Deployment Fullført! 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "* Image: \`${{ needs.push-docker-image.outputs.image }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "* Branch: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "* Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "* Miljø: Produksjon" >> $GITHUB_STEP_SUMMARY
+
+      - name: ⚠️ Deployment Feilet
+        if: failure()
+        run: |
+          echo "## Deployment Feilet ❌" >> $GITHUB_STEP_SUMMARY
+          echo "* Image: \`${{ needs.push-docker-image.outputs.image }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "* Branch: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "* Miljø: Produksjon" >> $GITHUB_STEP_SUMMARY
+          echo "Vennligst sjekk loggene for mer informasjon." >> $GITHUB_STEP_SUMMARY
