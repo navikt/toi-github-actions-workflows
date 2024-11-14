@@ -1,7 +1,7 @@
 on:
   workflow_call:
     inputs:
-      app:
+      app_name:
         required: true
         type: string
       deploy-to-dev-if-branch-name-is:
@@ -36,13 +36,15 @@ jobs:
           npm run build
           echo "::endgroup::"
 
-      - name: 🐳 Push Docker image to GAR
+      - name: 🐳 Last opp Docker-image til GAR
         id: docker-build-push
         uses: nais/docker-build-push@v0
         env:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
         with:
           team: toi
+          docker_context: apps/${{ inputs.app_name }}
+          image_suffix: ${{ inputs.app_name }}
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
           build_secrets: 'NODE_AUTH_TOKEN=${{ secrets.READER_TOKEN }}'
