@@ -43,7 +43,6 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
         with:
           team: toi
-          docker_context: apps/${{ inputs.app_name }}
           image_suffix: ${{ inputs.app_name }}
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
