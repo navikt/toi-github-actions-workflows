@@ -4,9 +4,6 @@ on:
       app:
         required: true
         type: string
-      base-path:
-        required: true
-        type: string
       deploy-to-dev-if-branch-name-is:
         required: false
         type: string
