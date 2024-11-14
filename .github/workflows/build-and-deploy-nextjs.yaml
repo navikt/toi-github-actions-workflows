@@ -7,7 +7,16 @@ on:
       deploy-to-dev-if-branch-name-is:
         required: false
         type: string
-
+      dev-vars-path:
+        required: false
+        type: string
+        description: 'Path to VARS file for NAIS deployment'
+        default: '.nais/dev-gcp.json'
+      prod-vars-path:
+        required: false
+        type: string
+        description: 'Path to VARS file for NAIS deployment'
+        default: '.nais/prod-gcp.json'
 jobs:
   build:
     name: 🏗️ Bygg applikasjon
@@ -77,6 +86,7 @@ jobs:
           CLUSTER: dev-gcp
           RESOURCE: nais/dev-gcp.yaml
           VAR: image=${{ needs.build.outputs.image }}
+          VARS: ${{ inputs.dev-vars-path }}
 
   deploy-til-prod:
     name: 🚀 Deploy til prod-gcp
@@ -95,6 +105,7 @@ jobs:
           CLUSTER: prod-gcp
           RESOURCE: nais/prod-gcp.yaml
           VAR: image=${{ needs.build.outputs.image }}
+          VARS: ${{ inputs.prod-vars-path }}
 
       - name: 📝 Deployment Oppsummering
         if: success()
