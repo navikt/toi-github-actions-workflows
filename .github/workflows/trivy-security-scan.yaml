@@ -19,7 +19,7 @@ jobs:
 
       - run: echo "IMAGE=${{ inputs.image }}" >> $GITHUB_ENV
 
-      - name: 'Use the image tagged "latest"'
+      - name: 'Defaulting to the tag "latest" of the Docker image to be scanned'
         if: inputs.image == '' && (contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref))
         run: |
           repo_name="${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER}"
