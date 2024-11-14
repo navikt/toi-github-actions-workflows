@@ -36,16 +36,7 @@ jobs:
           npm run build
           echo "::endgroup::"
 
-  push-docker-image:
-    name: 🐳 Push Docker-image
-    needs: build
-    runs-on: ubuntu-latest
-    if: contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) || github.ref == format('refs/heads/{0}', inputs.deploy-to-dev-if-branch-name-is)
-    steps:
-      - name: 🔄 Hent Kildekode
-        uses: actions/checkout@v4
-
-      - name: 🐳 Push Docker-image til GAR
+      - name: 🐳 Push Docker image to GAR
         id: docker-build-push
         uses: nais/docker-build-push@v0
         env:
@@ -55,16 +46,16 @@ jobs:
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
           build_secrets: 'NODE_AUTH_TOKEN=${{ secrets.READER_TOKEN }}'
-          tag: ${{ contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && 'latest' || github.sha }}
+          tag: ${{ github.ref == 'refs/heads/main' && 'latest' || github.sha }}
     outputs:
       image: ${{ steps.docker-build-push.outputs.image }}
 
   call-trivy-security-scan:
     name: 🔒 Security Scan
-    needs: push-docker-image
+    needs: build
     uses: navikt/toi-github-actions-workflows/.github/workflows/trivy-security-scan.yaml@main
     with:
-      image: ${{ needs.push-docker-image.outputs.image }}
+      image: ${{ needs.build.outputs.image }}
     permissions:
       id-token: write
       security-events: write
@@ -73,7 +64,7 @@ jobs:
   deploy-til-dev:
     name: 🚀 Deploy til dev-gcp
     needs:
-      - push-docker-image
+      - build
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
@@ -84,12 +75,12 @@ jobs:
         env:
           CLUSTER: dev-gcp
           RESOURCE: deploy/dev-gcp.yaml
-          VAR: image=${{ needs.push-docker-image.outputs.image }}
+          VAR: image=${{ needs.build.outputs.image }}
 
   deploy-til-prod:
     name: 🚀 Deploy til prod-gcp
     needs:
-      - push-docker-image
+      - build
       - deploy-til-dev
     if: contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref)
     runs-on: ubuntu-latest
@@ -102,13 +93,13 @@ jobs:
         env:
           CLUSTER: prod-gcp
           RESOURCE: deploy/prod-gcp.yaml
-          VAR: image=${{ needs.push-docker-image.outputs.image }}
+          VAR: image=${{ needs.build.outputs.image }}
 
       - name: 📝 Deployment Oppsummering
         if: success()
         run: |
           echo "## Deployment Fullført! 🎉" >> $GITHUB_STEP_SUMMARY
-          echo "* Image: \`${{ needs.push-docker-image.outputs.image }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "* Image: \`${{ needs.build.outputs.image }}\`" >> $GITHUB_STEP_SUMMARY
           echo "* Branch: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
           echo "* Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "* Miljø: Produksjon" >> $GITHUB_STEP_SUMMARY
@@ -117,7 +108,7 @@ jobs:
         if: failure()
         run: |
           echo "## Deployment Feilet ❌" >> $GITHUB_STEP_SUMMARY
-          echo "* Image: \`${{ needs.push-docker-image.outputs.image }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "* Image: \`${{ needs.build.outputs.image }}\`" >> $GITHUB_STEP_SUMMARY
           echo "* Branch: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
           echo "* Miljø: Produksjon" >> $GITHUB_STEP_SUMMARY
           echo "Vennligst sjekk loggene for mer informasjon." >> $GITHUB_STEP_SUMMARY
