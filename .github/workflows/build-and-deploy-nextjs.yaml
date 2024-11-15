@@ -11,12 +11,12 @@ on:
         required: false
         type: string
         description: 'Path to VARS file for NAIS deployment'
-        default: '.nais/dev-gcp.json'
+        default: ''
       prod-vars-path:
         required: false
         type: string
         description: 'Path to VARS file for NAIS deployment'
-        default: '.nais/prod-gcp.json'
+        default: ''
 jobs:
   build:
     name: 🏗️ Bygg applikasjon
@@ -75,7 +75,7 @@ jobs:
     name: 🚀 Deploy til dev-gcp
     needs:
       - build
-    if: inputs.dev-vars-path && (contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) || github.ref == format('refs/heads/{0}', inputs.deploy-to-dev-if-branch-name-is))
+    if: inputs.dev-vars-path != '' && (contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) || github.ref == format('refs/heads/{0}', inputs.deploy-to-dev-if-branch-name-is))
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
@@ -94,7 +94,7 @@ jobs:
     needs:
       - build
       - deploy-til-dev
-    if: inputs.prod-vars-path && contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref)
+    if: inputs.prod-vars-path != '' && contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref)
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
