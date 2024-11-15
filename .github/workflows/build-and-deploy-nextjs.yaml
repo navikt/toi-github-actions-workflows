@@ -69,7 +69,6 @@ jobs:
     permissions:
       id-token: write
       security-events: write
-      actions: read # Nødvendig bare fordi Github-repoene "rekrutteringsbistand-fontend" og "rekrutteringstreff" ikke er public
     secrets: inherit
 
   deploy-til-dev:
