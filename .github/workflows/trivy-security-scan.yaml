@@ -4,6 +4,9 @@ on:
       image:
         required: false
         type: string
+      app_name_for_trivy_result:
+        required: false
+        type: string
 
 jobs:
   trivy-security-scan:
@@ -22,9 +25,11 @@ jobs:
       - name: 'Defaulting to the tag "latest" of the Docker image to be scanned'
         if: inputs.image == '' && (contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref))
         run: |
-          repo_name="${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER}"
-          repo_name="$(tr '[:upper:]' '[:lower:]' <<< "$repo_name")"
+          repo_name="${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER}" # Remove owner name from repo name
+          repo_name="${repo_name#/}" # Remove leading slash if it exists
+          repo_name="$(tr '[:upper:]' '[:lower:]' <<< "$repo_name")" # To lower case
           registry="${{ steps.login.outputs.registry }}"
+          registry="${registry%/}" # Trim trailing slash if it exists
           IMAGE="${registry}/${repo_name}:latest"
           echo "IMAGE=${IMAGE}" # Print to log
           echo "IMAGE=${IMAGE}" >> $GITHUB_ENV
@@ -45,3 +50,4 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
+
