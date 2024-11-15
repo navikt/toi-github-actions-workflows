@@ -30,7 +30,6 @@ jobs:
         id: docker
         with:
           team: toi
-          # The tag "latest" should only be applied to images based on the default branch
           tag: ${{ contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && 'latest' || github.sha }}
           dockerfile: Dockerfile
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
