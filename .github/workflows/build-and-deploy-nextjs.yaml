@@ -11,12 +11,12 @@ on:
         required: false
         type: string
         description: 'Path to VARS file for NAIS deployment'
-        default: '.nais/dev-gcp.json'
+        default: ''
       prod-vars-path:
         required: false
         type: string
         description: 'Path to VARS file for NAIS deployment'
-        default: '.nais/prod-gcp.json'
+        default: ''
 jobs:
   build:
     name: 🏗️ Bygg applikasjon
