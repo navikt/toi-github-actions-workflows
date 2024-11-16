@@ -4,10 +4,10 @@ on:
       image:
         required: false
         type: string
-      app_name_for_trivy_result:
+      category:
         required: false
         type: string
-
+        description: 'Name of the app within a monorepo. Used as a grouping key in the Trivy result. See https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/uploading-a-sarif-file-to-github#uploading-a-code-scanning-analysis-with-github-actions'
 jobs:
   trivy-security-scan:
     runs-on: ubuntu-latest
@@ -50,4 +50,4 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
-
+          category: ${{ inputs.category }}
