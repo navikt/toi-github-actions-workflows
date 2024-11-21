@@ -4,6 +4,10 @@ on:
       app_name:
         required: true
         type: string
+      pnpm:
+        required: false
+        type: boolean
+        default: false
       deploy-to-dev-if-branch-name-is:
         required: false
         type: string
@@ -25,13 +29,36 @@ jobs:
       - name: 🔄 Hent Kildekode
         uses: actions/checkout@v4
 
+      - name: 📥 Sett opp pnpm
+        if: inputs.pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.14.2
+
       - name: 📦 Sett opp Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.14.0'
           registry-url: 'https://npm.pkg.github.com'
 
-      - name: 📥 Installer Avhengigheter
+      - name: 📥 Installer Avhengigheter med pnpm
+        if: inputs.pnpm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
+        run: |
+          echo "::group::Installerer pnpm-pakker"
+          pnpm install --frozen-lockfile
+          echo "::endgroup::"
+
+      - name: 🛠️ Bygg Next applikasjon med pnpm
+        if: inputs.pnpm
+        run: |
+          echo "::group::Bygger Next.js applikasjon"
+          pnpm run build
+          echo "::endgroup::"
+
+      - name: 📥 Installer Avhengigheter med npm
+        if: !inputs.pnpm
         run: |
           echo "::group::Installerer NPM-pakker"
           npm ci
@@ -39,7 +66,8 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
 
-      - name: 🛠️ Bygg Next.js Applikasjon
+      - name: 🛠️ Bygg Next applikasjon med npm
+        if: !inputs.pnpm
         run: |
           echo "::group::Bygger Next.js applikasjon"
           npm run build
