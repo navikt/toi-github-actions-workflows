@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 📥 Sett opp pnpm
-        if: inputs.pnpm
+        if: ${{ inputs.pnpm == true }}
         uses: pnpm/action-setup@v4
         with:
           version: 9.14.2
@@ -42,7 +42,7 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
 
       - name: 📥 Installer Avhengigheter med pnpm
-        if: inputs.pnpm
+        if: ${{ inputs.pnpm == true }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
         run: |
@@ -51,14 +51,14 @@ jobs:
           echo "::endgroup::"
 
       - name: 🛠️ Bygg Next applikasjon med pnpm
-        if: inputs.pnpm
+        if: ${{ inputs.pnpm == true }}
         run: |
           echo "::group::Bygger Next.js applikasjon"
           pnpm run build
           echo "::endgroup::"
 
       - name: 📥 Installer Avhengigheter med npm
-        if: !inputs.pnpm
+        if: ${{ inputs.pnpm == false }}
         run: |
           echo "::group::Installerer NPM-pakker"
           npm ci
@@ -67,7 +67,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
 
       - name: 🛠️ Bygg Next applikasjon med npm
-        if: !inputs.pnpm
+        if: ${{ inputs.pnpm == false }}
         run: |
           echo "::group::Bygger Next.js applikasjon"
           npm run build
