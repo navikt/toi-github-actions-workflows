@@ -132,7 +132,7 @@ jobs:
         uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: prod-gcp
-          RESOURCE: nais/prod-gcp.yaml
+          RESOURCE: nais/prod-gcp.yaml,nais/alerts.yaml
           VAR: image=${{ needs.build.outputs.image }}
           VARS: ${{ inputs.prod-vars-path }}
 
