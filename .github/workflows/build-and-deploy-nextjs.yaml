@@ -21,6 +21,22 @@ on:
         type: string
         description: 'Path to VARS file for NAIS deployment'
         default: ''
+      dev-yaml-path:
+        required: false
+        type: string
+        description: 'Path to YAML file for NAIS deployment'
+        default: '.nais/app.yaml'
+      prod-yaml-path:
+        required: false
+        type: string
+        description: 'Path to YAML file for NAIS deployment'
+        default: '.nais/app.yaml'
+      nais-alerts-path:
+        required: false
+        type: string
+        description: 'Path to nais alert file'
+        default: '.nais/alerts.yaml'
+
 jobs:
   build:
     name: 🏗️ Bygg applikasjon
@@ -113,7 +129,7 @@ jobs:
         uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: dev-gcp
-          RESOURCE: nais/dev-gcp.yaml
+          RESOURCE: ${{ inputs.dev-yaml-path }},${{ inputs.nais-alerts-path }}
           VAR: image=${{ needs.build.outputs.image }}
           VARS: ${{ inputs.dev-vars-path }}
 
@@ -132,7 +148,7 @@ jobs:
         uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: prod-gcp
-          RESOURCE: nais/prod-gcp.yaml,nais/alerts.yaml
+          RESOURCE: ${{ inputs.prod-yaml-path }}
           VAR: image=${{ needs.build.outputs.image }}
           VARS: ${{ inputs.prod-vars-path }}
 
