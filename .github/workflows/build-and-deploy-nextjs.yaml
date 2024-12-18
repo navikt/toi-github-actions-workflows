@@ -129,7 +129,7 @@ jobs:
         uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: dev-gcp
-          RESOURCE: ${{ inputs.dev-yaml-path }},${{ inputs.nais-alerts-path }}
+          RESOURCE: ${{ inputs.dev-yaml-path }}
           VAR: image=${{ needs.build.outputs.image }}
           VARS: ${{ inputs.dev-vars-path }}
 
@@ -148,7 +148,7 @@ jobs:
         uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: prod-gcp
-          RESOURCE: ${{ inputs.prod-yaml-path }}
+          RESOURCE: ${{ inputs.prod-yaml-path }},${{ inputs.nais-alerts-path }}
           VAR: image=${{ needs.build.outputs.image }}
           VARS: ${{ inputs.prod-vars-path }}
 
