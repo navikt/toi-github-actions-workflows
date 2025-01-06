@@ -25,7 +25,7 @@ jobs:
       image: ${{ needs.call-build-java-gradlew.outputs.image }}
       deploy-to-dev-if-branch-name-is: ${{ inputs.deploy-to-dev-if-branch-name-is }}
     permissions:
-      contents: read
+      contents: write
       id-token: write
     secrets: inherit
 
