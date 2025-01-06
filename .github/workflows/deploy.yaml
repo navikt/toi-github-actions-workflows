@@ -37,3 +37,13 @@ jobs:
           VARS: nais/prod-gcp.json
 # TODO: Legg til telemetry som anbefalt i eksemplet på https://docs.nais.io/build/how-to/build-and-deploy/#authorize-your-github-repository-for-deployment
 #          TELEMETRY: ${{ steps.docker-build-push.outputs.telemetry }}
+
+  dependencies: # https://sikkerhet.nav.no/docs/verktoy/dependabot#oppsett-gradle-buildgradlekts--buildgradle
+    needs: deploy-to-prod
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate and submit dependency graph
+        uses: gradle/actions/dependency-submission@v4
