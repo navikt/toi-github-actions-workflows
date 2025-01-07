@@ -107,7 +107,7 @@ jobs:
   call-trivy-security-scan:
     name: 🔒 Security Scan
     needs: build
-    uses: navikt/toi-github-actions-workflows/.github/workflows/trivy-security-scan.yaml@main
+    uses: navikt/toi-github-actions-workflows/.github/workflows/trivy-security-scan.yaml@v1
     with:
       image: ${{ needs.build.outputs.image }}
     permissions:
