@@ -10,7 +10,7 @@ on:
         type: string
 jobs:
   call-build-java-gradlew:
-    uses: navikt/toi-github-actions-workflows/.github/workflows/build-java-gradlew.yaml@v1
+    uses: navikt/toi-github-actions-workflows/.github/workflows/build-java-gradlew.yaml@fjern-nais-params
     with:
       java-version: ${{ inputs.java-version }}
     permissions:
@@ -20,7 +20,7 @@ jobs:
 
   call-deploy:
     needs: call-build-java-gradlew
-    uses: navikt/toi-github-actions-workflows/.github/workflows/deploy.yaml@v1
+    uses: navikt/toi-github-actions-workflows/.github/workflows/deploy.yaml@fjern-nais-params
     with:
       image: ${{ needs.call-build-java-gradlew.outputs.image }}
       deploy-to-dev-if-branch-name-is: ${{ inputs.deploy-to-dev-if-branch-name-is }}
@@ -31,7 +31,7 @@ jobs:
 
   call-trivy-security-scan:
     needs: call-build-java-gradlew
-    uses: navikt/toi-github-actions-workflows/.github/workflows/trivy-security-scan.yaml@v1
+    uses: navikt/toi-github-actions-workflows/.github/workflows/trivy-security-scan.yaml@fjern-nais-params
     with:
       image: ${{ needs.call-build-java-gradlew.outputs.image }}
     permissions:
