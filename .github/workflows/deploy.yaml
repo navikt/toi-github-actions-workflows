@@ -35,5 +35,3 @@ jobs:
           RESOURCE: nais/nais.yaml,nais/alerts.yaml
           VAR: image=${{ inputs.image }}
           VARS: nais/prod-gcp.json
-# TODO: Legg til telemetry som anbefalt i eksemplet på https://docs.nais.io/build/how-to/build-and-deploy/#authorize-your-github-repository-for-deployment
-#          TELEMETRY: ${{ steps.docker-build-push.outputs.telemetry }}
