@@ -159,6 +159,12 @@ jobs:
         with:
           version: 9.14.2
 
+      - name: 📦 Sett opp Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.14.0'
+          registry-url: 'https://npm.pkg.github.com'
+
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
 
