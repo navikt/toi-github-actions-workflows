@@ -173,7 +173,7 @@ jobs:
         run: pnpm exec playwright install chromium
 
       - name: Start Next.js app
-        run: pnpm dev & npx wait-on http://localhost:1337
+        run: pnpm dev &
 
       - name: Run Playwright tests
         run: pnpm exec playwright test --reporter=html
