@@ -195,6 +195,9 @@ jobs:
         with:
           branch: gh-pages
           folder: playwright-report
+          clean: true
+          folder-name: ${{ github.event.repository.name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   deploy-til-prod:
     name: 🚀 Deploy til prod-gcp
