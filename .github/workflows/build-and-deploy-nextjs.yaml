@@ -200,7 +200,7 @@ jobs:
           branch: gh-pages
           folder: playwright-report
           clean: true
-          target-folder: ${{ github.event.repository.name }}
+          target-folder: playwright-report
           token: ${{ secrets.GITHUB_TOKEN }}
 
   deploy-til-prod:
