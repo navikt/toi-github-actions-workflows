@@ -166,7 +166,7 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
 
       - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install chromium
 
       - name: Start Next.js app
         run: pnpm dev & npx wait-on http://localhost:1337
@@ -186,7 +186,8 @@ jobs:
     needs:
       - build
       - deploy-til-dev
-    if: contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref)
+      - playwright-tests
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && (inputs.playwright == false || needs.playwright-tests.result == 'success')
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
