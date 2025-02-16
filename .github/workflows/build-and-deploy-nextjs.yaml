@@ -36,7 +36,10 @@ on:
         type: string
         description: 'Path to nais alert file'
         default: '.nais/alerts.yaml'
-
+      playwright:
+        required: false
+        type: boolean
+        default: false
 jobs:
   build:
     name: 🏗️ Bygg applikasjon
@@ -89,6 +92,13 @@ jobs:
           npm run build
           echo "::endgroup::"
 
+      - name: Cache workspace
+        if: ${{ inputs.playwright == true }}
+        uses: actions/cache/save@v4
+        with:
+          path: .
+          key: workspace-${{ github.sha }}
+
       - name: 🐳 Last opp Docker-image til GAR
         id: docker-build-push
         uses: nais/docker-build-push@v0
@@ -130,6 +140,35 @@ jobs:
           RESOURCE: ${{ inputs.dev-yaml-path }}
           VAR: image=${{ needs.build.outputs.image }}
           VARS: ${{ inputs.dev-vars-path }}
+
+  playwright-tests:
+    name: 🎭 Playwright Tests
+    needs: [build, deploy-til-dev]
+    if: ${{ inputs.playwright == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Restore workspace
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: workspace-${{ github.sha }}
+
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Start Next.js app
+        run: pnpm dev & npx wait-on http://localhost:1337
+
+      - name: Run Playwright tests
+        run: pnpm exec playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
 
   deploy-til-prod:
     name: 🚀 Deploy til prod-gcp
