@@ -154,6 +154,11 @@ jobs:
           path: .
           key: workspace-${{ github.sha }}
 
+      - name: 📥 Sett opp pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.14.2
+
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
 
