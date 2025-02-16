@@ -40,6 +40,10 @@ on:
         required: false
         type: boolean
         default: false
+      playwright-github-report:
+        required: false
+        type: boolean
+        default: false
 jobs:
   build:
     name: 🏗️ Bygg applikasjon
@@ -172,14 +176,25 @@ jobs:
         run: pnpm dev & npx wait-on http://localhost:1337
 
       - name: Run Playwright tests
-        run: pnpm exec playwright test
+        run: pnpm exec playwright test --reporter=html
 
       - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
+        if: ${{ inputs.playwright-github-report == true }}
         with:
           name: playwright-report
           path: playwright-report/
-          retention-days: 30
+          retention-days: 7
+
+      - name: Setup GitHub Pages
+        if: ${{ inputs.playwright-github-report == true }}
+        uses: actions/configure-pages@v3
+
+      - name: Deploy Playwright Report to GitHub Pages
+        if: ${{ inputs.playwright-github-report == true }}
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: playwright-report
 
   deploy-til-prod:
     name: 🚀 Deploy til prod-gcp
