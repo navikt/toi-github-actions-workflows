@@ -176,11 +176,11 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm exec playwright install chromium
 
-      - name: Start Next.js app
-        run: pnpm dev &
+      - name: Start Next.js app in test mode
+        run: pnpm test-dev &
 
       - name: Run Playwright tests
-        run: pnpm exec playwright test --reporter=html
+        run: pnpm test
 
       - uses: actions/upload-artifact@v4
         if: ${{ inputs.playwright-github-report == true }}
