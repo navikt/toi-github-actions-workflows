@@ -24,6 +24,8 @@ Versjonering kan gjøres på flere måter. Jeg prøver først med en pragmatisk 
 * Et versjonsnummer gjelder for hele dette repoet, dvs. for alle workflows i dette repoet. Det betyr at når vi øker versjonsnummeret pga. en breaking change i ett workflow-skript får alle workflow-skript nytt versjonsnummer, også de ikke har blitt endret.
 * Når jeg gjør en non-breaking change på f.eks. v2 (som betyr at versjonsnummeret ikke skal bumpes til v3) må jeg slette releasen "v2" og tag-en "v2". Deretter må jeg opprette tag "v2" på nytt - fra head i main-branchen - og opprette ny release basert på tag "v2". Kan gjøres i Github web-GUI-et: Klikk på "Releases" på venstresiden av forsiden til repoet.
 
+Vi burde kanskje opprette versjoner med https://cli.github.com/manual/gh_release men den oppdaget jeg sent.
+
 # Henvendelser
 
 ## For Nav-ansatte
