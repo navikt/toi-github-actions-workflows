@@ -1,9 +1,6 @@
 on:
   workflow_call:
     inputs:
-      app_name:
-        required: true
-        type: string
       pnpm:
         required: false
         type: boolean
@@ -110,7 +107,6 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
         with:
           team: toi
-          image_suffix: ${{ inputs.app_name }}
           build_secrets: 'NODE_AUTH_TOKEN=${{ secrets.READER_TOKEN }}'
           tag: ${{ contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && 'latest' || github.sha }}
     outputs:
