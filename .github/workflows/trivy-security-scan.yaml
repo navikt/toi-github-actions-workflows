@@ -18,7 +18,7 @@ jobs:
       - run: echo "IMAGE=${{ inputs.image }}" >> $GITHUB_ENV
 
       - name: 'Defaulting to the tag "latest" of the Docker image to be scanned'
-        if: inputs.image == '' && (contains(fromJSON('["refs/heads/master", "refs/heads/main", "refs/heads/fiks-ukentlig-trivyscan"]'), github.ref))
+        if: inputs.image == '' && (contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref))
         run: |
           repo_name="${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER}" # Remove owner name from repo name
           repo_name="${repo_name#/}" # Remove leading slash if it exists
