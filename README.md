@@ -23,7 +23,8 @@ Det vil fremdeles fungere å skrive `@main`, men da risikerer du at en workflow 
 Versjonering kan gjøres på flere måter. Jeg prøver først med en pragmatisk løsning, så ser vi om det funker eller om vi må gjøre noe smartere. For enkelhets skyld beholder jeg ett repo for alle reusable workflows og bruker tags og releases for å sette versjonsnummer. Det har to ikke-ideelle konskevenser:
 * Et versjonsnummer gjelder for hele dette repoet, dvs. for alle workflows i dette repoet. Det betyr at når vi øker versjonsnummeret pga. en breaking change i ett workflow-skript får alle workflow-skript nytt versjonsnummer, også de ikke har blitt endret.
 * Når jeg gjør en non-breaking change på f.eks. v2 (som betyr at versjonsnummeret ikke skal bumpes til v3) må jeg slette releasen "v2" og tag-en "v2". Deretter må jeg opprette tag "v2" på nytt - fra head i main-branchen - og opprette ny release basert på tag "v2". Kan gjøres i Github web-GUI-et: Klikk på "Releases" på venstresiden av forsiden til repoet.
-
+* Når jeg gjør en breaking change og øker versjonsnummeret på repoet fra f.eks. v2 til v3, husk å oppdatere versjonsumeret i alle referansene/kallene til workflow-filer fra "...@v2" til "...@v3".
+* 
 Vi burde kanskje opprette versjoner med https://cli.github.com/manual/gh_release men den oppdaget jeg sent.
 
 # Henvendelser
