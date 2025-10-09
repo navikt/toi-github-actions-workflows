@@ -41,6 +41,10 @@ on:
         required: false
         type: boolean
         default: false
+      storybook:
+        required: false
+        type: boolean
+        default: false
 jobs:
   build:
     name: 🏗️ Bygg applikasjon
@@ -195,8 +199,66 @@ jobs:
         with:
           branch: gh-pages
           folder: playwright-report
-          clean: true
+          clean: false
           target-folder: playwright-report
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  storybook:
+    name: 📚 Storybook
+    needs: [build, deploy-til-dev]
+    if: ${{ inputs.storybook == true }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 🔄 Hent Kildekode
+        uses: actions/checkout@v4
+
+      - name: 📥 Sett opp pnpm
+        if: ${{ inputs.pnpm == true }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.14.2
+
+      - name: 📦 Sett opp Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.14.0'
+          registry-url: 'https://npm.pkg.github.com'
+
+      - name: 📥 Installer Avhengigheter (pnpm)
+        if: ${{ inputs.pnpm == true }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
+        run: |
+          echo "::group::Installerer pnpm-pakker"
+          pnpm install --frozen-lockfile
+          echo "::endgroup::"
+
+      - name: 📥 Installer Avhengigheter (npm)
+        if: ${{ inputs.pnpm == false }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
+        run: |
+          echo "::group::Installerer NPM-pakker"
+          npm ci
+          echo "::endgroup::"
+
+      - name: 🏗️ Bygg Storybook
+        env:
+          STORYBOOK_BASE_PATH: /rekrutteringsbistand-frontend/storybook/
+        run: |
+          echo "::group::Bygger Storybook"
+          if [ "${{ inputs.pnpm }}" = "true" ]; then pnpm build-storybook --output-dir storybook-static; else npm run build-storybook -- --output-dir storybook-static; fi
+          echo "::endgroup::"
+
+      - name: 🚀 Deploy Storybook til GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: storybook-static
+          clean: false
+          target-folder: storybook
           token: ${{ secrets.GITHUB_TOKEN }}
 
   deploy-til-prod:
