@@ -62,7 +62,7 @@ jobs:
       - name: 📦 Sett opp Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.14.0'
+          node-version: '22.20.0'
           registry-url: 'https://npm.pkg.github.com'
 
       - name: 📥 Installer Avhengigheter med pnpm
@@ -170,7 +170,7 @@ jobs:
       - name: 📦 Sett opp Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.14.0'
+          node-version: '22.20.0'
           registry-url: 'https://npm.pkg.github.com'
 
       - name: Install Playwright Browsers
@@ -223,7 +223,7 @@ jobs:
       - name: 📦 Sett opp Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.14.0'
+          node-version: '22.20.0'
           registry-url: 'https://npm.pkg.github.com'
 
       - name: 📥 Installer Avhengigheter (pnpm)
