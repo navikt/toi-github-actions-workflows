@@ -268,7 +268,7 @@ jobs:
       - build
       - deploy-til-dev
       - playwright-tests
-    if: contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && (inputs.playwright == false || needs.playwright-tests.result == 'success')
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && (!inputs.playwright || needs.playwright-tests.result == 'success')
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
