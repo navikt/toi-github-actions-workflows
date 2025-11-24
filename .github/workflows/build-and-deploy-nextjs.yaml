@@ -146,7 +146,7 @@ jobs:
           VARS: ${{ inputs.dev-vars-path }}
 
   playwright-tests:
-    name: 🎭 Playwright Tests
+    name: ${{ inputs.playwright && '🎭 Playwright Tests' || '(skippet) 🎭 Playwright Tests ' }}
     needs: [build, deploy-til-dev]
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -155,9 +155,12 @@ jobs:
       pages: write
       id-token: write
     steps:
-      - name: Skip Playwright Tests
+      - name: Skip tests
         if: ${{ !inputs.playwright }}
-        run: echo "Playwright er deaktivert for denne kjøringen"
+        run: |
+          echo "Playwright er deaktivert for denne kjøringen"
+          echo "### Playwright" >> "$GITHUB_STEP_SUMMARY"
+          echo "Testene ble hoppet over fordi inputs.playwright ikke er satt." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Restore workspace
         if: ${{ inputs.playwright }}
@@ -287,7 +290,7 @@ jobs:
         uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: prod-gcp
-          RESOURCE: ${{ inputs.prod-yaml-path }},${{ inputs.nais-alerts-path }}
+          RESOURCE: ${{ inputs.prod-yaml-path }}${{ inputs.nais-alerts-path != '' && format(',{0}', inputs.nais-alerts-path) || '' }}
           VAR: image=${{ needs.build.outputs.image }}
           VARS: ${{ inputs.prod-vars-path }}
 
