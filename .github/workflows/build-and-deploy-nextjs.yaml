@@ -5,6 +5,10 @@ on:
         required: false
         type: boolean
         default: false
+      deploy-to-dev-only:
+        required: false
+        type: boolean
+        default: false
       deploy-to-dev-if-branch-name-is:
         required: false
         type: string
@@ -280,7 +284,7 @@ jobs:
       - build
       - deploy-til-dev
       - playwright-tests
-    if: contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && (!inputs.playwright || needs.playwright-tests.result == 'success')
+    if: ${{ !inputs.deploy-to-dev-only && contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && (!inputs.playwright || needs.playwright-tests.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
