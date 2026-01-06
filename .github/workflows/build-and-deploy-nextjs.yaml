@@ -163,8 +163,8 @@ jobs:
       pages: write
       id-token: write
     steps:
-      - name: Start testserver
-        uses: ./.github/actions/start-next-testserver
+      - name: 🚀 Start testserver
+        uses: navikt/toi-github-actions-workflows/.github/actions/next-testserver@main
 
       - name: Playwright
         run: pnpm test
@@ -192,7 +192,7 @@ jobs:
 
   a11y-tests:
     name: ♿ Pa11y
-    if: ${{ !inputs.a11y }}
+    if: ${{ inputs.a11y }}
     needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 30
