@@ -1,0 +1,31 @@
+name: 'Start Next.js Testserver'
+description: 'Starter en Next.js testserver for testing formål'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 🔄 Hent Kildekode
+      uses: actions/checkout@v4
+
+    - name: Restore workspace
+      uses: actions/cache/restore@v4
+      with:
+        path: .
+        key: workspace-${{ github.sha }}
+
+    - name: 📥 Sett opp pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9.14.2
+
+    - name: 📦 Sett opp Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.20.0'
+        registry-url: 'https://npm.pkg.github.com'
+
+    - name: Install Playwright Browsers
+      run: pnpm exec playwright install chromium
+
+    - name: Start Next.js app in test mode
+      run: pnpm test-dev &

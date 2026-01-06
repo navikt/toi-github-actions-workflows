@@ -153,7 +153,7 @@ jobs:
           VARS: ${{ inputs.dev-vars-path }}
 
   playwright-tests:
-    name: 🎭 Playwright
+    name: 🎭 Playwright Tests
     if: ${{ inputs.playwright }}
     needs: [build]
     runs-on: ubuntu-latest
@@ -192,13 +192,13 @@ jobs:
 
   a11y-tests:
     name: ♿ Pa11y
-    if: ${{ inputs.a11y }}
+    if: ${{ !inputs.a11y }}
     needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Start testserver
-        uses: ./.github/actions/start-next-testserver
+      - name: 🚀 Start testserver
+        uses: navikt/toi-github-actions-workflows/.github/actions/next-testserver@main
 
       - name: Pa11y
         shell: bash
