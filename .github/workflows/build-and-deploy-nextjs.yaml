@@ -153,8 +153,8 @@ jobs:
           VARS: ${{ inputs.dev-vars-path }}
 
   playwright-tests:
-    name: 🎭 Playwright Tests
-    if: ${{ !inputs.playwright }}
+    name: 🎭 Playwright
+    if: ${{ inputs.playwright }}
     needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -192,7 +192,7 @@ jobs:
 
   a11y-tests:
     name: ♿ Pa11y
-    if: ${{ !inputs.a11y }}
+    if: ${{ inputs.a11y }}
     needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -200,7 +200,7 @@ jobs:
       - name: Start testserver
         uses: ./.github/actions/start-next-testserver
 
-      - name: Pa11y 
+      - name: Pa11y
         shell: bash
         run: |
           export PUPPETEER_EXECUTABLE_PATH="$(node -e "console.log(require('@playwright/test').chromium.executablePath())")"
@@ -208,7 +208,7 @@ jobs:
 
   storybook:
     name: 📚 Storybook
-    needs: [build, deploy-til-dev]
+    needs: [build]
     if: ${{ inputs.storybook == true }}
     runs-on: ubuntu-latest
     permissions:
