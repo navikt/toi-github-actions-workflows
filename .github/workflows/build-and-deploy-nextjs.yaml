@@ -1,10 +1,6 @@
 on:
   workflow_call:
     inputs:
-      versjon:
-        required: true
-        type: string
-   
       pnpm:
         required: false
         type: boolean
