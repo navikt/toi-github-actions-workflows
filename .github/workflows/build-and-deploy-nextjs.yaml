@@ -1,6 +1,10 @@
 on:
   workflow_call:
     inputs:
+      versjon:
+        required: true
+        type: string
+   
       pnpm:
         required: false
         type: boolean
@@ -164,7 +168,7 @@ jobs:
       id-token: write
     steps:
       - name: 🚀 Start testserver
-        uses: navikt/toi-github-actions-workflows/.github/actions/next-testserver@main
+        uses: navikt/toi-github-actions-workflows/.github/actions/next-testserver@v7
 
       - name: Playwright
         run: pnpm test
@@ -198,7 +202,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: 🚀 Start testserver
-        uses: navikt/toi-github-actions-workflows/.github/actions/next-testserver@main
+        uses: navikt/toi-github-actions-workflows/.github/actions/next-testserver@v7
 
       - name: Pa11y
         shell: bash
