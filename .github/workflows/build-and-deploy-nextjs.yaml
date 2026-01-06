@@ -106,7 +106,6 @@ jobs:
           echo "::endgroup::"
 
       - name: Cache workspace
-        if: ${{ inputs.playwright == true }}
         uses: actions/cache/save@v4
         with:
           path: .
@@ -154,8 +153,9 @@ jobs:
           VARS: ${{ inputs.dev-vars-path }}
 
   playwright-tests:
-    name: ${{ inputs.playwright && '🎭 Playwright Tests' || '(skippet) 🎭 Playwright Tests ' }}
-    needs: [build, deploy-til-dev]
+    name: 🎭 Playwright Tests
+    if: ${{ !inputs.playwright }}
+    needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -163,65 +163,25 @@ jobs:
       pages: write
       id-token: write
     steps:
-      - name: Skip tests
-        if: ${{ !inputs.playwright }}
-        run: |
-          echo "Playwright er deaktivert for denne kjøringen"
-          echo "### Playwright" >> "$GITHUB_STEP_SUMMARY"
-          echo "Testene ble hoppet over fordi inputs.playwright ikke er satt." >> "$GITHUB_STEP_SUMMARY"
+      - name: Start testserver
+        uses: ./.github/actions/start-next-testserver
 
-      - name: Restore workspace
-        if: ${{ inputs.playwright }}
-        uses: actions/cache/restore@v4
-        with:
-          path: .
-          key: workspace-${{ github.sha }}
-
-      - name: 📥 Sett opp pnpm
-        if: ${{ inputs.playwright }}
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.14.2
-
-      - name: 📦 Sett opp Node.js
-        if: ${{ inputs.playwright }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.20.0'
-          registry-url: 'https://npm.pkg.github.com'
-
-      - name: Install Playwright Browsers
-        if: ${{ inputs.playwright }}
-        run: pnpm exec playwright install chromium
-
-      - name: Start Next.js app in test mode
-        if: ${{ inputs.playwright }}
-        run: pnpm test-dev &
-
-      - name: a11y tests
-        if: ${{ inputs.a11y }}
-        shell: bash
-        run: |
-          export PUPPETEER_EXECUTABLE_PATH="$(node -e "console.log(require('@playwright/test').chromium.executablePath())")"
-          pnpm pa11y-ci &
-
-      - name: Run Playwright tests
-        if: ${{ inputs.playwright }}
+      - name: Playwright
         run: pnpm test
 
       - uses: actions/upload-artifact@v4
-        if: ${{ inputs.playwright && contains(fromJSON('["refs/heads/main"]'), github.ref) && !cancelled() && inputs.playwright-github-report == true }}
+        if: ${{  contains(fromJSON('["refs/heads/main"]'), github.ref) && !cancelled() && inputs.playwright-github-report == true }}
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
 
       - name: Setup GitHub Pages
-        if: ${{ inputs.playwright && contains(fromJSON('["refs/heads/main"]'), github.ref) && !cancelled() && inputs.playwright-github-report == true }}
+        if: ${{ contains(fromJSON('["refs/heads/main"]'), github.ref) && !cancelled() && inputs.playwright-github-report == true }}
         uses: actions/configure-pages@v3
 
       - name: Deploy Playwright Report to GitHub Pages
-        if: ${{ inputs.playwright && contains(fromJSON('["refs/heads/main"]'), github.ref) && !cancelled() && inputs.playwright-github-report == true }}
+        if: ${{ contains(fromJSON('["refs/heads/main"]'), github.ref) && !cancelled() && inputs.playwright-github-report == true }}
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
@@ -229,6 +189,22 @@ jobs:
           clean: false
           target-folder: playwright-report
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  a11y-tests:
+    name: ♿ Pa11y
+    if: ${{ !inputs.a11y }}
+    needs: [build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Start testserver
+        uses: ./.github/actions/start-next-testserver
+
+      - name: Pa11y 
+        shell: bash
+        run: |
+          export PUPPETEER_EXECUTABLE_PATH="$(node -e "console.log(require('@playwright/test').chromium.executablePath())")"
+          pnpm pa11y-ci
 
   storybook:
     name: 📚 Storybook
@@ -295,7 +271,8 @@ jobs:
       - build
       - deploy-til-dev
       - playwright-tests
-    if: ${{ !inputs.deploy-to-dev-only && contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && (!inputs.playwright || needs.playwright-tests.result == 'success') }}
+      - a11y-tests
+    if: ${{ !inputs.deploy-to-dev-only && contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && (!inputs.playwright || needs.playwright-tests.result == 'success') && (!inputs.a11y || needs.a11y-tests.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
