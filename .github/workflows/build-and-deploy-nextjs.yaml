@@ -200,7 +200,10 @@ jobs:
 
       - name: a11y tests
         if: ${{ inputs.a11y }}
-        run: PUPPETEER_EXECUTABLE_PATH=$(node -e \"console.log(require('@playwright/test').chromium.executablePath())\") pnpm pa11y-ci &
+        shell: bash
+        run: |
+          export PUPPETEER_EXECUTABLE_PATH="$(node -e "console.log(require('@playwright/test').chromium.executablePath())")"
+          pnpm pa11y-ci &
 
       - name: Run Playwright tests
         if: ${{ inputs.playwright }}
