@@ -75,35 +75,23 @@ jobs:
 
       - name: 📥 Installer Avhengigheter med pnpm
         if: ${{ inputs.pnpm == true }}
+        uses: ./.github/actions/frontend/install-pnpm-dependencies
         env:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
-        run: |
-          echo "::group::Installerer pnpm-pakker"
-          pnpm install --frozen-lockfile
-          echo "::endgroup::"
 
       - name: 🛠️ Bygg Next applikasjon med pnpm
         if: ${{ inputs.pnpm == true }}
-        run: |
-          echo "::group::Bygger Next.js applikasjon"
-          pnpm run build
-          echo "::endgroup::"
+        uses: ./.github/actions/frontend/build-next-pnpm
 
       - name: 📥 Installer Avhengigheter med npm
         if: ${{ inputs.pnpm == false }}
-        run: |
-          echo "::group::Installerer NPM-pakker"
-          npm ci
-          echo "::endgroup::"
+        uses: ./.github/actions/frontend/install-npm-dependencies
         env:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
 
       - name: 🛠️ Bygg Next applikasjon med npm
         if: ${{ inputs.pnpm == false }}
-        run: |
-          echo "::group::Bygger Next.js applikasjon"
-          npm run build
-          echo "::endgroup::"
+        uses: ./.github/actions/frontend/build-next-npm
 
       - name: Cache workspace
         uses: actions/cache/save@v4
@@ -164,10 +152,10 @@ jobs:
       id-token: write
     steps:
       - name: 🚀 Start testserver
-        uses: navikt/toi-github-actions-workflows/.github/actions/next-testserver@v7
+        uses: ./.github/actions/frontend/next-testserver
 
       - name: Playwright
-        run: pnpm test
+        uses: ./.github/actions/frontend/run-playwright-tests
 
       - uses: actions/upload-artifact@v4
         if: ${{  contains(fromJSON('["refs/heads/main"]'), github.ref) && !cancelled() && inputs.playwright-github-report == true }}
@@ -198,13 +186,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: 🚀 Start testserver
-        uses: navikt/toi-github-actions-workflows/.github/actions/next-testserver@v7
+        uses: ./.github/actions/frontend/next-testserver
 
       - name: Pa11y
-        shell: bash
-        run: |
-          export PUPPETEER_EXECUTABLE_PATH="$(node -e "console.log(require('@playwright/test').chromium.executablePath())")"
-          pnpm pa11y-ci
+        uses: ./.github/actions/frontend/run-pa11y
 
   storybook:
     name: 📚 Storybook
@@ -214,56 +199,15 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: 🔄 Hent Kildekode
-        uses: actions/checkout@v4
-
-      - name: 📥 Sett opp pnpm
-        if: ${{ inputs.pnpm == true }}
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.14.2
-
-      - name: 📦 Sett opp Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.20.0'
-          registry-url: 'https://npm.pkg.github.com'
-
-      - name: 📥 Installer Avhengigheter (pnpm)
-        if: ${{ inputs.pnpm == true }}
+      - name: 📚 Bygg og deploy Storybook
+        uses: ./.github/actions/frontend/build-storybook
         env:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
-        run: |
-          echo "::group::Installerer pnpm-pakker"
-          pnpm install --frozen-lockfile
-          echo "::endgroup::"
-
-      - name: 📥 Installer Avhengigheter (npm)
-        if: ${{ inputs.pnpm == false }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
-        run: |
-          echo "::group::Installerer NPM-pakker"
-          npm ci
-          echo "::endgroup::"
-
-      - name: 🏗️ Bygg Storybook
-        env:
-          STORYBOOK_BASE_PATH: /rekrutteringsbistand-frontend/storybook/
-        run: |
-          echo "::group::Bygger Storybook"
-          if [ "${{ inputs.pnpm }}" = "true" ]; then pnpm build-storybook --output-dir storybook-static; else npm run build-storybook -- --output-dir storybook-static; fi
-          echo "::endgroup::"
-
-      - name: 🚀 Deploy Storybook til GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        if: ${{contains(fromJSON('["refs/heads/main"]'), github.ref) && !cancelled() }}
         with:
-          branch: gh-pages
-          folder: storybook-static
-          clean: false
-          target-folder: storybook
-          token: ${{ secrets.GITHUB_TOKEN }}
+          use-pnpm: ${{ inputs.pnpm }}
+          storybook-base-path: /rekrutteringsbistand-frontend/storybook/
+          deploy-to-pages: ${{ contains(fromJSON('["refs/heads/main"]'), github.ref) }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   deploy-til-prod:
     name: 🚀 Deploy til prod-gcp
@@ -288,18 +232,17 @@ jobs:
 
       - name: 📝 Deployment Oppsummering
         if: success()
-        run: |
-          echo "## Deployment Fullført! 🎉" >> $GITHUB_STEP_SUMMARY
-          echo "* Image: \`${{ needs.build.outputs.image }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "* Branch: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "* Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "* Miljø: Produksjon" >> $GITHUB_STEP_SUMMARY
+        uses: ./.github/actions/frontend/deployment-success-summary
+        with:
+          image: ${{ needs.build.outputs.image }}
+          branch: ${{ github.ref_name }}
+          commit: ${{ github.sha }}
+          environment: Produksjon
 
       - name: ⚠️ Deployment Feilet
         if: failure()
-        run: |
-          echo "## Deployment Feilet ❌" >> $GITHUB_STEP_SUMMARY
-          echo "* Image: \`${{ needs.build.outputs.image }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "* Branch: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "* Miljø: Produksjon" >> $GITHUB_STEP_SUMMARY
-          echo "Vennligst sjekk loggene for mer informasjon." >> $GITHUB_STEP_SUMMARY
+        uses: ./.github/actions/frontend/deployment-failure-summary
+        with:
+          image: ${{ needs.build.outputs.image }}
+          branch: ${{ github.ref_name }}
+          environment: Produksjon
