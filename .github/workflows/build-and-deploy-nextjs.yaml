@@ -75,23 +75,23 @@ jobs:
 
       - name: 📥 Installer Avhengigheter med pnpm
         if: ${{ inputs.pnpm == true }}
-        uses: ./.github/actions/frontend/install-pnpm-dependencies
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/install-pnpm-dependencies@v8
         env:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
 
       - name: 🛠️ Bygg Next applikasjon med pnpm
         if: ${{ inputs.pnpm == true }}
-        uses: ./.github/actions/frontend/build-next-pnpm
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/build-next-pnpm@v8
 
       - name: 📥 Installer Avhengigheter med npm
         if: ${{ inputs.pnpm == false }}
-        uses: ./.github/actions/frontend/install-npm-dependencies
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/install-npm-dependencies@v8
         env:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
 
       - name: 🛠️ Bygg Next applikasjon med npm
         if: ${{ inputs.pnpm == false }}
-        uses: ./.github/actions/frontend/build-next-npm
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/build-next-npm@v8
 
       - name: Cache workspace
         uses: actions/cache/save@v4
@@ -114,13 +114,15 @@ jobs:
   call-trivy-security-scan:
     name: 🔒 Security Scan
     needs: build
-    uses: navikt/toi-github-actions-workflows/.github/workflows/trivy-security-scan.yaml@v2
-    with:
-      image: ${{ needs.build.outputs.image }}
+    runs-on: ubuntu-latest
     permissions:
       id-token: write
       security-events: write
-    secrets: inherit
+    steps:
+      - name: Kjør Trivy scan
+        uses: navikt/toi-github-actions-workflows/.github/actions/trivy-scan@v8.1
+        with:
+          image: ${{ needs.build.outputs.image }}
 
   deploy-til-dev:
     name: 🚀 Deploy til dev-gcp
@@ -152,10 +154,10 @@ jobs:
       id-token: write
     steps:
       - name: 🚀 Start testserver
-        uses: ./.github/actions/frontend/next-testserver
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v8
 
       - name: Playwright
-        uses: ./.github/actions/frontend/run-playwright-tests
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/run-playwright-tests@v8
 
       - uses: actions/upload-artifact@v4
         if: ${{  contains(fromJSON('["refs/heads/main"]'), github.ref) && !cancelled() && inputs.playwright-github-report == true }}
@@ -186,10 +188,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: 🚀 Start testserver
-        uses: ./.github/actions/frontend/next-testserver
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v8
 
       - name: Pa11y
-        uses: ./.github/actions/frontend/run-pa11y
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/run-pa11y@v8
 
   storybook:
     name: 📚 Storybook
@@ -200,7 +202,7 @@ jobs:
       contents: write
     steps:
       - name: 📚 Bygg og deploy Storybook
-        uses: ./.github/actions/frontend/build-storybook
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/build-storybook@v8
         env:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
         with:
@@ -232,7 +234,7 @@ jobs:
 
       - name: 📝 Deployment Oppsummering
         if: success()
-        uses: ./.github/actions/frontend/deployment-success-summary
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/deployment-success-summary@v8
         with:
           image: ${{ needs.build.outputs.image }}
           branch: ${{ github.ref_name }}
@@ -241,7 +243,7 @@ jobs:
 
       - name: ⚠️ Deployment Feilet
         if: failure()
-        uses: ./.github/actions/frontend/deployment-failure-summary
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/deployment-failure-summary@v8
         with:
           image: ${{ needs.build.outputs.image }}
           branch: ${{ github.ref_name }}
