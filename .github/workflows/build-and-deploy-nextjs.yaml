@@ -216,7 +216,9 @@ jobs:
     needs:
       - build
       - deploy-til-dev
-    if: ${{ !inputs.deploy-to-dev-only && contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && (!inputs.playwright || needs.playwright-tests.result == 'success') && (!inputs.a11y || needs.a11y-tests.result == 'success') }}
+      - playwright-tests
+      - a11y-tests
+    if: ${{ always() && !inputs.deploy-to-dev-only && contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && needs.deploy-til-dev.result == 'success' && (!inputs.playwright || needs.playwright-tests.result == 'success') && (!inputs.a11y || needs.a11y-tests.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
