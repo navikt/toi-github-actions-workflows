@@ -20,12 +20,22 @@ on:
         type: string
         description: 'Path to VARS file for NAIS deployment'
         default: ''
+      ansatt-vars-path:
+        required: false
+        type: string
+        description: 'Path to VARS file for NAIS deployment'
+        default: ''
       prod-vars-path:
         required: false
         type: string
         description: 'Path to VARS file for NAIS deployment'
         default: ''
       dev-yaml-path:
+        required: false
+        type: string
+        description: 'Path to YAML file for NAIS deployment'
+        default: '.nais/app.yaml'
+      ansatt-yaml-path:
         required: false
         type: string
         description: 'Path to YAML file for NAIS deployment'
@@ -169,8 +179,9 @@ jobs:
         uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: dev-gcp
-          RESOURCE: .nais/ansatt-gcp.json
+          RESOURCE: ${{ inputs.ansatt-yaml-path }}
           VAR: image=${{ needs.build.outputs.image }}
+          VARS: ${{ inputs.ansatt-vars-path }}
 
   playwright-tests:
     name: 🎭 Playwright Tests
