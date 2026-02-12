@@ -12,7 +12,7 @@ on:
       deploy-dev-branch:
         required: false
         type: string
-      deploy-ansatt-branch:
+      deploy-dev2-branch:
         required: false
         type: string
       dev-vars-path:
@@ -20,7 +20,7 @@ on:
         type: string
         description: 'Path to VARS file for NAIS deployment'
         default: ''
-      ansatt-vars-path:
+      dev2-vars-path:
         required: false
         type: string
         description: 'Path to VARS file for NAIS deployment'
@@ -35,7 +35,7 @@ on:
         type: string
         description: 'Path to YAML file for NAIS deployment'
         default: '.nais/app.yaml'
-      ansatt-yaml-path:
+      dev2-yaml-path:
         required: false
         type: string
         description: 'Path to YAML file for NAIS deployment'
@@ -155,33 +155,33 @@ jobs:
           VAR: image=${{ needs.build.outputs.image }}
           VARS: ${{ inputs.dev-vars-path }}
 
-  deploy-til-ansatt:
-    name: 🚀 Deploy til ansatt
+  deploy-til-dev2:
+    name: 🚀 Deploy til dev2
     needs:
       - build
-    if: contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) || github.ref == format('refs/heads/{0}', inputs.deploy-ansatt-branch)
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) || github.ref == format('refs/heads/{0}', inputs.deploy-dev2-branch)
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
         uses: actions/checkout@v4
 
-      - name: 📂 Sjekk om ansatt-gcp.json finnes
-        id: check-ansatt-file
+      - name: 📂 Sjekk om dev2-gcp.json finnes
+        id: check-dev2-file
         run: |
-          if [ -f ".nais/ansatt-gcp.json" ]; then
+          if [ -f ".nais/dev2-gcp.json" ]; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: 📦 Deploy til Ansatt
-        if: steps.check-ansatt-file.outputs.exists == 'true'
+      - name: 📦 Deploy til dev2
+        if: steps.check-dev2-file.outputs.exists == 'true'
         uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: dev-gcp
-          RESOURCE: ${{ inputs.ansatt-yaml-path }}
+          RESOURCE: ${{ inputs.dev2-yaml-path }}
           VAR: image=${{ needs.build.outputs.image }}
-          VARS: ${{ inputs.ansatt-vars-path }}
+          VARS: ${{ inputs.dev2-vars-path }}
 
   playwright-tests:
     name: 🎭 Playwright Tests
