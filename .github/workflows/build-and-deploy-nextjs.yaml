@@ -9,7 +9,10 @@ on:
         required: false
         type: boolean
         default: false
-      deploy-to-dev-if-branch-name-is:
+      deploy-dev-branch:
+        required: false
+        type: string
+      deploy-ansatt-branch:
         required: false
         type: string
       dev-vars-path:
@@ -128,7 +131,7 @@ jobs:
     name: 🚀 Deploy til dev-gcp
     needs:
       - build
-    if: contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) || github.ref == format('refs/heads/{0}', inputs.deploy-to-dev-if-branch-name-is)
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) || github.ref == format('refs/heads/{0}', inputs.deploy-dev-branch)
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
@@ -141,6 +144,33 @@ jobs:
           RESOURCE: ${{ inputs.dev-yaml-path }}
           VAR: image=${{ needs.build.outputs.image }}
           VARS: ${{ inputs.dev-vars-path }}
+
+  deploy-til-ansatt:
+    name: 🚀 Deploy til ansatt
+    needs:
+      - build
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) || github.ref == format('refs/heads/{0}', inputs.deploy-ansatt-branch)
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔄 Hent Kildekode
+        uses: actions/checkout@v4
+
+      - name: 📂 Sjekk om ansatt-gcp.json finnes
+        id: check-ansatt-file
+        run: |
+          if [ -f ".nais/ansatt-gcp.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📦 Deploy til Ansatt
+        if: steps.check-ansatt-file.outputs.exists == 'true'
+        uses: nais/deploy/actions/deploy@v2
+        env:
+          CLUSTER: dev-gcp
+          RESOURCE: .nais/ansatt-gcp.json
+          VAR: image=${{ needs.build.outputs.image }}
 
   playwright-tests:
     name: 🎭 Playwright Tests
