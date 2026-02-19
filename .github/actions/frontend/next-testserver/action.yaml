@@ -1,5 +1,5 @@
 name: 'Start Next.js Testserver'
-description: 'Starter en Next.js standalone testserver for testing formål'
+description: 'Starter en Next.js testserver for testing formål'
 
 runs:
   using: 'composite'
@@ -28,9 +28,10 @@ runs:
       shell: bash
       run: pnpm exec playwright install chromium
 
-    - name: Start standalone server
+    - name: Bygg og start standalone server
       shell: bash
       run: |
+        pnpm test-build
         cp -r public .next/standalone/
         cp -r .next/static .next/standalone/.next/
         PORT=1337 node .next/standalone/server.js &
