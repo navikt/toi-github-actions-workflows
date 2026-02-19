@@ -7,11 +7,11 @@ runs:
     - name: 🔄 Hent Kildekode
       uses: actions/checkout@v4
 
-    - name: Restore workspace
+    - name: Restore test workspace
       uses: actions/cache/restore@v4
       with:
         path: .
-        key: workspace-${{ github.sha }}
+        key: test-workspace-${{ github.sha }}
 
     - name: 📥 Sett opp pnpm
       uses: pnpm/action-setup@v4
@@ -28,10 +28,9 @@ runs:
       shell: bash
       run: pnpm exec playwright install chromium
 
-    - name: Bygg og start standalone server
+    - name: Start standalone server
       shell: bash
       run: |
-        pnpm test-build
         cp -r public .next/standalone/
         cp -r .next/static .next/standalone/.next/
         PORT=1337 node .next/standalone/server.js &
