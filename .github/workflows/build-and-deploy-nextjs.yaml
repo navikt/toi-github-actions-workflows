@@ -200,12 +200,12 @@ jobs:
       id-token: write
     steps:
       - name: 🚀 Start testserver
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v8
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v9.3
         with:
           test-standalone: ${{ inputs.test-standalone }}
 
       - name: Playwright
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/run-playwright-tests@v8
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v9.3
 
       - uses: actions/upload-artifact@v4
         if: ${{  contains(fromJSON('["refs/heads/main"]'), github.ref) && !cancelled() && inputs.playwright-github-report == true }}
