@@ -4,14 +4,12 @@ description: 'Starter en Next.js testserver for testing formål'
 runs:
   using: 'composite'
   steps:
-    - name: 🔄 Hent Kildekode
-      uses: actions/checkout@v4
-
     - name: Restore test workspace
       uses: actions/cache/restore@v4
       with:
         path: .
         key: test-workspace-${{ github.sha }}
+        fail-on-cache-miss: true
 
     - name: 📥 Sett opp pnpm
       uses: pnpm/action-setup@v4
