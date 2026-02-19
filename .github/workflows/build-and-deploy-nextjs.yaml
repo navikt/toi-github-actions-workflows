@@ -1,10 +1,6 @@
 on:
   workflow_call:
     inputs:
-      pnpm:
-        required: false
-        type: boolean
-        default: false
       deploy-to-dev-only:
         required: false
         type: boolean
@@ -50,27 +46,24 @@ on:
         type: string
         description: 'Path to nais alert file'
         default: '.nais/alerts.yaml'
-      playwright:
+      playwright-command:
         required: false
-        type: boolean
-        default: false
+        type: string
+        default: ''
+        description: 'Kommando for å kjøre Playwright-tester, f.eks. pnpm test'
       playwright-github-report:
         required: false
         type: boolean
         default: false
-      test-standalone:
-        required: false
-        type: boolean
-        default: false
-        description: 'Bygg med NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE og kjør tester mot standalone-server i stedet for next dev'
       storybook:
         required: false
         type: boolean
         default: false
-      a11y:
+      a11y-command:
         required: false
-        type: boolean
-        default: false
+        type: string
+        default: ''
+        description: 'Kommando for å kjøre a11y-tester, f.eks. pnpm pa11y-ci'
 jobs:
   build:
     name: 🏗️ Bygg applikasjon
@@ -80,7 +73,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 📥 Sett opp pnpm
-        if: ${{ inputs.pnpm == true }}
         uses: pnpm/action-setup@v4
         with:
           version: 9.14.2
@@ -91,25 +83,13 @@ jobs:
           node-version: '22.20.0'
           registry-url: 'https://npm.pkg.github.com'
 
-      - name: 📥 Installer Avhengigheter med pnpm
-        if: ${{ inputs.pnpm == true }}
+      - name: 📥 Installer Avhengigheter
         uses: navikt/toi-github-actions-workflows/.github/actions/frontend/install-pnpm-dependencies@v8
         env:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
 
-      - name: 🛠️ Bygg Next applikasjon med pnpm
-        if: ${{ inputs.pnpm == true }}
+      - name: 🛠️ Bygg Next applikasjon
         uses: navikt/toi-github-actions-workflows/.github/actions/frontend/build-next-pnpm@v8
-
-      - name: 📥 Installer Avhengigheter med npm
-        if: ${{ inputs.pnpm == false }}
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/install-npm-dependencies@v8
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
-
-      - name: 🛠️ Bygg Next applikasjon med npm
-        if: ${{ inputs.pnpm == false }}
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/build-next-npm@v8
 
       - name: Cache workspace
         uses: actions/cache/save@v4
@@ -190,7 +170,7 @@ jobs:
 
   playwright-tests:
     name: 🎭 Playwright Tests
-    if: ${{ inputs.playwright }}
+    if: ${{ inputs.playwright-command != '' }}
     needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -201,11 +181,10 @@ jobs:
     steps:
       - name: 🚀 Start testserver
         uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v9.3
-        with:
-          test-standalone: ${{ inputs.test-standalone }}
 
-      - name: Playwright
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v9.3
+      - name: 🎭 Playwright
+        shell: bash
+        run: ${{ inputs.playwright-command }}
 
       - uses: actions/upload-artifact@v4
         if: ${{  contains(fromJSON('["refs/heads/main"]'), github.ref) && !cancelled() && inputs.playwright-github-report == true }}
@@ -230,18 +209,17 @@ jobs:
 
   a11y-tests:
     name: ♿ Pa11y
-    if: ${{ inputs.a11y }}
+    if: ${{ inputs.a11y-command != '' }}
     needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: 🚀 Start testserver
         uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v9.3
-        with:
-          test-standalone: ${{ inputs.test-standalone }}
 
-      - name: Pa11y
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/run-pa11y@v8
+      - name: ♿ Pa11y
+        shell: bash
+        run: ${{ inputs.a11y-command }}
 
   storybook:
     name: 📚 Storybook
@@ -256,7 +234,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
         with:
-          use-pnpm: ${{ inputs.pnpm }}
+          use-pnpm: true
           storybook-base-path: /rekrutteringsbistand-frontend/storybook/
           deploy-to-pages: ${{ contains(fromJSON('["refs/heads/main"]'), github.ref) }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -268,7 +246,7 @@ jobs:
       - deploy-til-dev
       - playwright-tests
       - a11y-tests
-    if: ${{ always() && !inputs.deploy-to-dev-only && contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && needs.deploy-til-dev.result == 'success' && (!inputs.playwright || needs.playwright-tests.result == 'success') && (!inputs.a11y || needs.a11y-tests.result == 'success') }}
+    if: ${{ always() && !inputs.deploy-to-dev-only && contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && needs.deploy-til-dev.result == 'success' && (inputs.playwright-command == '' || needs.playwright-tests.result == 'success') && (inputs.a11y-command == '' || needs.a11y-tests.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
