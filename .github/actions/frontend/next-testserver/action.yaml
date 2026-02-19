@@ -32,3 +32,17 @@ runs:
         cp -r public .next/standalone/
         cp -r .next/static .next/standalone/.next/
         PORT=1337 node .next/standalone/server.js &
+
+    - name: Vent på at serveren er klar
+      shell: bash
+      run: |
+        for i in $(seq 1 30); do
+          if curl -s http://localhost:1337 > /dev/null 2>&1; then
+            echo "Server er klar"
+            exit 0
+          fi
+          echo "Venter på server... ($i/30)"
+          sleep 2
+        done
+        echo "Server startet ikke innen 60 sekunder"
+        exit 1
