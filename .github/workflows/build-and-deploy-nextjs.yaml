@@ -58,6 +58,11 @@ on:
         required: false
         type: boolean
         default: false
+      test-standalone:
+        required: false
+        type: boolean
+        default: false
+        description: 'Bygg med NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE og kjør tester mot standalone-server i stedet for next dev'
       storybook:
         required: false
         type: boolean
@@ -196,6 +201,8 @@ jobs:
     steps:
       - name: 🚀 Start testserver
         uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v8
+        with:
+          test-standalone: ${{ inputs.test-standalone }}
 
       - name: Playwright
         uses: navikt/toi-github-actions-workflows/.github/actions/frontend/run-playwright-tests@v8
@@ -230,6 +237,8 @@ jobs:
     steps:
       - name: 🚀 Start testserver
         uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v8
+        with:
+          test-standalone: ${{ inputs.test-standalone }}
 
       - name: Pa11y
         uses: navikt/toi-github-actions-workflows/.github/actions/frontend/run-pa11y@v8

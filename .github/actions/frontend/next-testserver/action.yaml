@@ -1,6 +1,12 @@
 name: 'Start Next.js Testserver'
 description: 'Starter en Next.js testserver for testing formål'
 
+inputs:
+  test-standalone:
+    description: 'Bygg med testmodus og bruk standalone-server i stedet for next dev'
+    required: false
+    default: 'false'
+
 runs:
   using: 'composite'
   steps:
@@ -28,6 +34,16 @@ runs:
       shell: bash
       run: pnpm exec playwright install chromium
 
-    - name: Start Next.js app in test mode
+    - name: Build and start standalone server
+      if: inputs.test-standalone == 'true'
+      shell: bash
+      run: |
+        pnpm test-build
+        cp -r public .next/standalone/
+        cp -r .next/static .next/standalone/.next/
+        PORT=1337 node .next/standalone/server.js &
+
+    - name: Start Next.js app in dev mode
+      if: inputs.test-standalone != 'true'
       shell: bash
       run: pnpm test-dev &
