@@ -225,6 +225,12 @@ jobs:
         shell: bash
         run: ${{ inputs.playwright-command }}${{ inputs.playwright-snapshots && ' -- --update-snapshots' || '' }}
 
+      - name: � Hent kildekode for snapshot-commit
+        if: ${{ inputs.playwright-snapshots && !cancelled() }}
+        uses: actions/checkout@v4
+        with:
+          clean: false
+
       - name: 📸 Commit oppdaterte snapshots
         if: ${{ inputs.playwright-snapshots && !cancelled() }}
         uses: stefanzweifel/git-auto-commit-action@v7
