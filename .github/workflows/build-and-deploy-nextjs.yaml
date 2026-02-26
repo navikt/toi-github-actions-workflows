@@ -55,6 +55,11 @@ on:
         required: false
         type: boolean
         default: false
+      playwright-snapshots:
+        required: false
+        type: boolean
+        default: false
+        description: 'Oppdater og commit Playwright snapshots automatisk i PR'
       storybook:
         required: false
         type: boolean
@@ -218,7 +223,14 @@ jobs:
 
       - name: 🎭 Playwright
         shell: bash
-        run: ${{ inputs.playwright-command }}
+        run: ${{ inputs.playwright-command }} ${{ inputs.playwright-snapshots && '--update-snapshots' || '' }}
+
+      - name: 📸 Commit oppdaterte snapshots
+        if: ${{ inputs.playwright-snapshots && !cancelled() }}
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: 'oppdater playwright snapshots'
+          file_pattern: '**/*-snapshots/**/*.png'
 
       - uses: actions/upload-artifact@v4
         if: ${{  contains(fromJSON('["refs/heads/main"]'), github.ref) && !cancelled() && inputs.playwright-github-report == true }}
