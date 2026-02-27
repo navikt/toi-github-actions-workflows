@@ -219,11 +219,11 @@ jobs:
       id-token: write
     steps:
       - name: 🚀 Start testserver
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v10
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v11
 
       - name: 🎭 Playwright
         shell: bash
-        run: ${{ inputs.playwright-command }}${{ inputs.playwright-snapshots && ' -- --update-snapshots' || '' }}
+        run: ${{ inputs.playwright-command }}${{ inputs.playwright-snapshots && github.ref != 'refs/heads/main' && ' -- --update-snapshots' || '' }}
 
       - name: 📸 Lagre snapshots midlertidig
         if: ${{ inputs.playwright-snapshots && github.ref != 'refs/heads/main' && !cancelled() }}
@@ -297,7 +297,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: 🚀 Start testserver
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v10
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v11
 
       - name: ♿ Pa11y
         shell: bash
