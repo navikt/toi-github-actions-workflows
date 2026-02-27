@@ -229,24 +229,37 @@ jobs:
         if: ${{ inputs.playwright-snapshots && !cancelled() }}
         shell: bash
         run: |
-          mkdir -p /tmp/playwright-snapshots
-          find . -path '*-snapshots/*.png' -exec cp --parents {} /tmp/playwright-snapshots/ \; || true
+          find tests -path '*-snapshots/*.png' -type f > /tmp/snapshot-files.txt
+          echo "Found $(wc -l < /tmp/snapshot-files.txt) snapshot files:"
+          cat /tmp/snapshot-files.txt
+          if [ -s /tmp/snapshot-files.txt ]; then
+            tar cf /tmp/snapshots.tar -T /tmp/snapshot-files.txt
+          fi
 
       - name: 🔄 Hent kildekode for snapshot-commit
         if: ${{ inputs.playwright-snapshots && !cancelled() }}
         uses: actions/checkout@v5
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: 📸 Gjenopprett snapshots
         if: ${{ inputs.playwright-snapshots && !cancelled() }}
         shell: bash
-        run: cp -r /tmp/playwright-snapshots/. . || true
+        run: |
+          if [ -f /tmp/snapshots.tar ]; then
+            tar xf /tmp/snapshots.tar
+            echo "Restored snapshot files:"
+            find tests -path '*-snapshots/*.png' -type f | head -10
+          else
+            echo "No snapshots.tar found — nothing to restore"
+          fi
 
       - name: 📸 Commit oppdaterte snapshots
         if: ${{ inputs.playwright-snapshots && !cancelled() }}
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: 'oppdater playwright snapshots'
-          file_pattern: '**/*-snapshots/**/*.png'
+          file_pattern: 'tests/**/*-snapshots/**/*.png'
           status_options: '--untracked-files=all'
 
       - uses: actions/upload-artifact@v4
