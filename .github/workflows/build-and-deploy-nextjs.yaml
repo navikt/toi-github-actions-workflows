@@ -254,7 +254,23 @@ jobs:
             echo "No snapshots.tar found — nothing to restore"
           fi
 
-      - name: 📸 Commit oppdaterte snapshots
+      - name: � Debug git status
+        if: ${{ inputs.playwright-snapshots && !cancelled() }}
+        shell: bash
+        run: |
+          echo "=== git status ==="
+          git status --untracked-files=all
+          echo ""
+          echo "=== git check-ignore ==="
+          find tests -path '*-snapshots/*.png' -type f | head -3 | xargs -I{} git check-ignore -v {} || echo "Files are NOT ignored"
+          echo ""
+          echo "=== All .gitignore files ==="
+          find . -name '.gitignore' -not -path './node_modules/*' 2>/dev/null
+          echo ""
+          echo "=== .git/info/exclude ==="
+          cat .git/info/exclude 2>/dev/null || echo "No exclude file"
+
+      - name: �📸 Commit oppdaterte snapshots
         if: ${{ inputs.playwright-snapshots && !cancelled() }}
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
