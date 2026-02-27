@@ -226,7 +226,7 @@ jobs:
         run: ${{ inputs.playwright-command }}${{ inputs.playwright-snapshots && ' -- --update-snapshots' || '' }}
 
       - name: 📸 Lagre snapshots midlertidig
-        if: ${{ inputs.playwright-snapshots && !cancelled() }}
+        if: ${{ inputs.playwright-snapshots && github.event_name == 'pull_request' && !cancelled() }}
         shell: bash
         run: |
           find tests -path '*-snapshots/*.png' -type f > /tmp/snapshot-files.txt
@@ -237,13 +237,13 @@ jobs:
           fi
 
       - name: 🔄 Hent kildekode for snapshot-commit
-        if: ${{ inputs.playwright-snapshots && !cancelled() }}
+        if: ${{ inputs.playwright-snapshots && github.event_name == 'pull_request' && !cancelled() }}
         uses: actions/checkout@v5
         with:
           ref: ${{ github.head_ref || github.ref_name }}
 
       - name: 📸 Gjenopprett snapshots
-        if: ${{ inputs.playwright-snapshots && !cancelled() }}
+        if: ${{ inputs.playwright-snapshots && github.event_name == 'pull_request' && !cancelled() }}
         shell: bash
         run: |
           if [ -f /tmp/snapshots.tar ]; then
@@ -255,7 +255,7 @@ jobs:
           fi
 
       - name: 📸 Commit oppdaterte snapshots
-        if: ${{ inputs.playwright-snapshots && !cancelled() }}
+        if: ${{ inputs.playwright-snapshots && github.event_name == 'pull_request' && !cancelled() }}
         shell: bash
         run: |
           shopt -s globstar
