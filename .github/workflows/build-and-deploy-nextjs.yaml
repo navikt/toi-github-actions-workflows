@@ -237,6 +237,8 @@ jobs:
         with:
           commit_message: 'oppdater playwright snapshots'
           file_pattern: '**/*-snapshots/**/*.png'
+          disable_globbing: true
+          status_options: '--untracked-files=all'
 
       - uses: actions/upload-artifact@v4
         if: ${{  contains(fromJSON('["refs/heads/main"]'), github.ref) && !cancelled() && inputs.playwright-github-report == true }}
