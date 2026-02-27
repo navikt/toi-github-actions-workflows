@@ -47,7 +47,7 @@ runs:
   using: 'composite'
   steps:
     - name: 🔄 Hent Kildekode
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: 📥 Sett opp pnpm
       if: ${{ inputs['use-pnpm'] == 'true' }}

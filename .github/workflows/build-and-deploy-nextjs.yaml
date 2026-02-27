@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 📥 Sett opp pnpm
         uses: pnpm/action-setup@v4
@@ -120,7 +120,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 📥 Sett opp pnpm
         uses: pnpm/action-setup@v4
@@ -169,7 +169,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 📦 Deploy til Dev
         uses: nais/deploy/actions/deploy@v2
@@ -187,7 +187,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 📂 Sjekk om dev2-gcp.json finnes
         id: check-dev2-file
@@ -225,11 +225,21 @@ jobs:
         shell: bash
         run: ${{ inputs.playwright-command }}${{ inputs.playwright-snapshots && ' -- --update-snapshots' || '' }}
 
-      - name: � Hent kildekode for snapshot-commit
+      - name: 📸 Lagre snapshots midlertidig
         if: ${{ inputs.playwright-snapshots && !cancelled() }}
-        uses: actions/checkout@v4
-        with:
-          clean: false
+        shell: bash
+        run: |
+          mkdir -p /tmp/playwright-snapshots
+          find . -path '*-snapshots/*.png' -exec cp --parents {} /tmp/playwright-snapshots/ \; || true
+
+      - name: 🔄 Hent kildekode for snapshot-commit
+        if: ${{ inputs.playwright-snapshots && !cancelled() }}
+        uses: actions/checkout@v5
+
+      - name: 📸 Gjenopprett snapshots
+        if: ${{ inputs.playwright-snapshots && !cancelled() }}
+        shell: bash
+        run: cp -r /tmp/playwright-snapshots/. . || true
 
       - name: 📸 Commit oppdaterte snapshots
         if: ${{ inputs.playwright-snapshots && !cancelled() }}
@@ -237,7 +247,6 @@ jobs:
         with:
           commit_message: 'oppdater playwright snapshots'
           file_pattern: '**/*-snapshots/**/*.png'
-          disable_globbing: true
           status_options: '--untracked-files=all'
 
       - uses: actions/upload-artifact@v4
@@ -304,7 +313,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 🔄 Hent Kildekode
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 📦 Deploy til Prod
         uses: nais/deploy/actions/deploy@v2
