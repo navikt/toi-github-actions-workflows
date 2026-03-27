@@ -89,12 +89,12 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
 
       - name: 📥 Installer Avhengigheter
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/install-pnpm-dependencies@v10
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/install-pnpm-dependencies@v12
         env:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
 
       - name: 🛠️ Bygg Next applikasjon
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/build-next-pnpm@v10
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/build-next-pnpm@v12
 
       - name: Cache workspace
         uses: actions/cache/save@v4
@@ -134,7 +134,7 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
 
       - name: 📥 Installer Avhengigheter
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/install-pnpm-dependencies@v10
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/install-pnpm-dependencies@v12
         env:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
 
@@ -157,7 +157,7 @@ jobs:
       security-events: write
     steps:
       - name: Kjør Trivy scan
-        uses: navikt/toi-github-actions-workflows/.github/actions/trivy-scan@v10
+        uses: navikt/toi-github-actions-workflows/.github/actions/trivy-scan@v12
         with:
           image: ${{ needs.build.outputs.image }}
 
@@ -219,7 +219,7 @@ jobs:
       id-token: write
     steps:
       - name: 🚀 Start testserver
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v11
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v12
 
       - name: 🎭 Playwright
         shell: bash
@@ -309,7 +309,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: 🚀 Start testserver
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v11
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/next-testserver@v12
 
       - name: ♿ Pa11y
         shell: bash
@@ -324,7 +324,7 @@ jobs:
       contents: write
     steps:
       - name: 📚 Bygg og deploy Storybook
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/build-storybook@v10
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/build-storybook@v12
         env:
           NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
         with:
@@ -356,7 +356,7 @@ jobs:
 
       - name: 📝 Deployment Oppsummering
         if: success()
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/deployment-success-summary@v10
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/deployment-success-summary@v12
         with:
           image: ${{ needs.build.outputs.image }}
           branch: ${{ github.ref_name }}
@@ -365,7 +365,7 @@ jobs:
 
       - name: ⚠️ Deployment Feilet
         if: failure()
-        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/deployment-failure-summary@v10
+        uses: navikt/toi-github-actions-workflows/.github/actions/frontend/deployment-failure-summary@v12
         with:
           image: ${{ needs.build.outputs.image }}
           branch: ${{ github.ref_name }}
