@@ -46,6 +46,6 @@ runs:
         limit-severities-for-sarif: true
 
     - name: Upload Trivy results to GitHub Security
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@v4
       with:
         sarif_file: 'trivy-results.sarif'
