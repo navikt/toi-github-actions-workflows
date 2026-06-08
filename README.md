@@ -3,29 +3,85 @@
 Hva er det? Se https://docs.github.com/en/actions/sharing-automations/reusing-workflows
 
 # Versjonering
-Prøver i januer 2025 å innføre versjonering på de reusable Github Workflows som ligger her. Det betyr at i appene våre sine workflows, hvor vi hittil har skrevet `@main` i
+Tidligere brukte ikke appene våre versjoner da de refererte til egenskrevne workflows. Vi bare referete til nyeste commit på main-branchen, ved å skrive `@main` i
 ```
 jobs:
     call-build-and-deploy:
     uses: navikt/toi-github-actions-workflows/.github/workflows/build-and-deploy.yaml@main
 ```
-bør vi nå begynne å skive `@v1`, `@v2`, `@v3`, osv. slik:
+Ulempen med dette er at en workflow  som har fungert hittil i din app slutter å fungere uten at du har endret noe i din app sitt repo. Det kan skje fordi en endring med en feil eller en braking change ble pushet til dette repoet (repoet som inneholder de felles worflows som din app sin worflow refererer til).
+
+Dette unngår vi ved at konsumenten låser seg til et versjonsnummer ved å skrive `@v1`, `@v2`, `@v3`, osv. slik:
 ```
 jobs:
     call-build-and-deploy:
     uses: navikt/toi-github-actions-workflows/.github/workflows/build-and-deploy.yaml@v1
 ```
 
-Tanken er at versjonsnummer bare skal økes ved breaking changes.
+Tanken er at versjonsnummer økes hos konsumenten/på bruksstedet i hver enkelt app bare ved breaking change. Det gir mindre vedlikeholdsarbeid for utviklere.
 
-Det vil fremdeles fungere å skrive `@main`, men da risikerer du at en workflow som har fungert hittil i din app slutter å fungere uten at du har endret noe i appen sitt Github-repo.
+## Hvordan teste en endring i en workflow før den blir released?
+Opprett en feature branch og bruk navnet på feature-branchen din i konsumenten der du normalt skriver versjonsnummer, slik:
+osv. slik:
+```
+jobs:
+    call-build-and-deploy:
+    uses: navikt/toi-github-actions-workflows/.github/workflows/build-and-deploy.yaml@min-feature-branch
+```
 
-Versjonering kan gjøres på flere måter. Jeg prøver først med en pragmatisk løsning, så ser vi om det funker eller om vi må gjøre noe smartere. For enkelhets skyld beholder jeg ett repo for alle reusable workflows og bruker tags og releases for å sette versjonsnummer. Det har to ikke-ideelle konskevenser:
-* Et versjonsnummer gjelder for hele dette repoet, dvs. for alle workflows i dette repoet. Det betyr at når vi øker versjonsnummeret pga. en breaking change i ett workflow-skript får alle workflow-skript nytt versjonsnummer, også de ikke har blitt endret.
-* Når jeg gjør en non-breaking change på f.eks. v2 (som betyr at versjonsnummeret ikke skal bumpes til v3) må jeg slette releasen "v2" og tag-en "v2". Deretter må jeg opprette tag "v2" på nytt - fra head i main-branchen - og opprette ny release basert på tag "v2". Kan gjøres i Github web-GUI-et: Klikk på "Releases" på venstresiden av forsiden til repoet.
-* Når jeg gjør en breaking change og øker versjonsnummeret på repoet fra f.eks. v2 til v3, husk å oppdatere versjonsnummeret i alle referansene/kallene til workflow-filer fra "...@v2" til "...@v3".
-  
-Vi burde kanskje opprette versjoner med https://cli.github.com/manual/gh_release men den oppdaget jeg sent.
+## Release Procedure
+
+### Version format
+
+Versions use two parts: **major.minor** (e.g. `v14.1`).
+
+| Part | When to increment | Example |
+|---|---|---|
+| **Major** | Breaking change (new required input, removed output, renamed workflow) | `v14.x` → `v15.0` |
+| **Minor** | Non-breaking change (new optional input, bug fix, dependency update) | `v14.0` → `v14.1` |
+
+However, the consumer (the app) does not use the major.minor version name. Two tags exist per release:
+
+| Tag | Moves? | Purpose |
+|---|---|---|
+| `v14` | ✅ Yes | What consumers pin to — always points to the latest compatible release |
+| `v14.1` | ❌ No | Immutable — used for auditability and rollback |
+
+---
+When introducing breaking changes:
+
+1. Create a `v15.0` (immutable) tag and create the `v15` major tag, both pointing to the same commit.
+2. **Do not move `v14`** — consumers pinned to `@v14` remain on the previous behaviour until they explicitly update to `@v15`.
+
+
+### Steps on every change
+
+All changes should be merged to `main` via a pull request before releasing. It would be nice if if the pull request description documents why the change was made.
+
+#### 1. Create an immutable version tag  on the merge commit
+This tag name has a minor part. Increment minor for non-breaking, major for breaking.
+```bash
+git tag v14.1
+git push origin v14.1
+```
+
+#### 2. Move the major tag (non-breaking change) or create a new major tag (breaking change) to point to the same commit
+This tag name does not have a minor part.
+```bash
+git tag -fa v14 -m "v14 -> v14.1"
+git push origin refs/tags/v14 --force
+```
+
+#### 3. Verify the tag is on a commit reachable from `main`
+
+```bash
+git branch --contains v14 | grep main
+```
+
+If `main` is not in the output, the tag is on the wrong commit — do not proceed.
+
+---
+
 
 # Henvendelser
 
