@@ -9,18 +9,29 @@ jobs:
     call-build-and-deploy:
     uses: navikt/toi-github-actions-workflows/.github/workflows/build-and-deploy.yaml@main
 ```
-Ulempen med dette er at en workflow  som har fungert hittil i din app slutter å fungere uten at du har endret noe i din app sitt repo. Det kan skje fordi en endring med en feil eller en braking change ble pushet til dette repoet (repoet som inneholder de felles worflows som din app sin worflow refererer til).
+Ulempen med dette er at en workflow som har fungert hittil i en app slutter å fungere uten at du har endret noe i appen sitt repo. Det kan skje når en endring med en feil eller en breaking change blir pushet til dette repoet (repoet som inneholder de felles worflows som appene sine worflows refererer til).
 
-Dette unngår vi ved at konsumenten låser seg til et versjonsnummer ved å skrive `@v1`, `@v2`, `@v3`, osv. slik:
+Denne risikoen unngår vi ved at konsumenten låser seg til et versjonsnummer ved å skrive `@v1`, `@v2`, `@v3`, osv. slik:
 ```
 jobs:
     call-build-and-deploy:
     uses: navikt/toi-github-actions-workflows/.github/workflows/build-and-deploy.yaml@v1
 ```
 
-Tanken er at versjonsnummer økes hos konsumenten/på bruksstedet i hver enkelt app bare ved breaking change. Det gir mindre vedlikeholdsarbeid for utviklere.
+Tanken er at versjonsnummer hos konsumenten (bruksstedet i hver enkelt app) bare trengs å økes ved breaking change. Det gir mindre vedlikeholdsarbeid for app-utviklerne.
 
-## Hvordan teste en endring i en workflow før den blir released?
+I en periode lagde vi Github releases, men nå bruker vi bare Git tags (etter juni 2026). Det er det eneste vi trenger, og det blir mindre å forholde seg til.
+
+## Release-prosedyre
+
+### Versjonsformat
+
+* Git tag-navnet startet med liten "v" etterfulgt av et heltall.
+* Bruk kun major versjonsnummer i tagnavnet: `v14`, `v15`, osv., ikke `v14.1` eller `v14.1.2`.
+* Øk versjonsnummeret bare ved breaking change. F.eks. ny obligatorisk input, fjernet output, omdøpte workflow.
+
+
+### 0: Hvordan teste en endring i en workflow før den blir released?
 Opprett en feature branch og bruk navnet på feature-branchen din i konsumenten der du normalt skriver versjonsnummer, slik:
 osv. slik:
 ```
@@ -29,58 +40,32 @@ jobs:
     uses: navikt/toi-github-actions-workflows/.github/workflows/build-and-deploy.yaml@min-feature-branch
 ```
 
-## Release Procedure
+### 1: Commit endringen til main
+Anbefaler at alle endringer squash-merges til `main` via en Github pull-request. Da kan pull-requesten inneholde beskrivelse av hvorfor endringen har blitt gjort. 
 
-### Version format
-
-Versions use two parts: **major.minor** (e.g. `v14.1`).
-
-| Part | When to increment | Example |
-|---|---|---|
-| **Major** | Breaking change (new required input, removed output, renamed workflow) | `v14.x` → `v15.0` |
-| **Minor** | Non-breaking change (new optional input, bug fix, dependency update) | `v14.0` → `v14.1` |
-
-However, the consumer (the app) does not use the major.minor version name. Two tags exist per release:
-
-| Tag | Moves? | Purpose |
-|---|---|---|
-| `v14` | ✅ Yes | What consumers pin to — always points to the latest compatible release |
-| `v14.1` | ❌ No | Immutable — used for auditability and rollback |
-
----
-When introducing breaking changes:
-
-1. Create a `v15.0` (immutable) tag and create the `v15` major tag, both pointing to the same commit.
-2. **Do not move `v14`** — consumers pinned to `@v14` remain on the previous behaviour until they explicitly update to `@v15`.
-
-
-### Steps on every change
-
-All changes should be merged to `main` via a pull request before releasing. It would be nice if if the pull request description documents why the change was made.
-
-#### 1. Create an immutable version tag  on the merge commit
-This tag name has a minor part. Increment minor for non-breaking, major for breaking.
+### 2: Sørg for at du er på main og har siste versjon lokalt
 ```bash
-git tag v14.1
-git push origin v14.1
+git checkout main
+git pull origin main
 ```
 
-#### 2. Move the major tag (non-breaking change) or create a new major tag (breaking change) to point to the same commit
-This tag name does not have a minor part.
+### 3-A: Non-breaking change
+Flytt eksisterende tag til nyeste commit:
 ```bash
-git tag -fa v14 -m "v14 -> v14.1"
+git tag -fa v14 -m "v14 minor change" 
 git push origin refs/tags/v14 --force
 ```
-
-#### 3. Verify the tag is on a commit reachable from `main`
+### 3-B: Breaking change
+1. Opprett ny tag med et høyere versjonsnummer:
 
 ```bash
-git branch --contains v14 | grep main
+git tag -a v15 -m "v15 breaking change"
+git push origin refs/tags/v15
 ```
+2. [!IMPORTANT]
+   Husk at felles-workflowene i dette repoet referer til hverandre med versjonsnummer, så oppgradering til ny versjon må også gjøres i dem, ikke bare i appene.
 
-If `main` is not in the output, the tag is on the wrong commit — do not proceed.
-
----
+3. Oppdater workflows i appene til å bruke det nye versjonsnumeret for at endringen  blir tatt i bruk
 
 
 # Henvendelser
