@@ -39,6 +39,7 @@ jobs:
     call-build-and-deploy:
     uses: navikt/toi-github-actions-workflows/.github/workflows/build-and-deploy.yaml@min-feature-branch
 ```
+Husk at felles-workflows i dette repoet refrer til hverandre med versjonsnummer, så det kan hende du må legg inn branch-navnet ditt flere steder.
 
 ### 1: Commit endringen til main
 Anbefaler at alle endringer squash-merges til `main` via en Github pull-request. Da kan pull-requesten inneholde beskrivelse av hvorfor endringen har blitt gjort. 
@@ -55,6 +56,8 @@ Flytt eksisterende tag til nyeste commit:
 git tag -fa v14 -m "v14 minor change" 
 git push origin refs/tags/v14 --force
 ```
+Du er ferdig. Endringen vil bli tatt i bruk alle steder som allerede referer til denne versjonen, uten at du trenger å endre noe på bruksstedet.
+
 ### 3-B: Breaking change
 1. Opprett ny tag med et høyere versjonsnummer:
 
@@ -62,8 +65,7 @@ git push origin refs/tags/v14 --force
 git tag -a v15 -m "v15 breaking change"
 git push origin refs/tags/v15
 ```
-2. [!IMPORTANT]
-   Husk at felles-workflowene i dette repoet referer til hverandre med versjonsnummer, så oppgradering til ny versjon må også gjøres i dem, ikke bare i appene.
+2. Husk at felles-workflowene i dette repoet referer til hverandre med versjonsnummer, så oppgradering til ny versjon må også gjøres i dem, ikke bare i appene.
 
 3. Oppdater workflows i appene til å bruke det nye versjonsnumeret for at endringen  blir tatt i bruk
 
