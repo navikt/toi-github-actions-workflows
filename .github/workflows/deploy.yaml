@@ -14,8 +14,10 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.ref == format('refs/heads/{0}', inputs.deploy-to-dev-if-branch-name-is)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: nais/deploy/actions/deploy@v2
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: nais/deploy/actions/deploy@fc3eae3edebabdf67f7592102ae16176d5ba3b5f # v2
         env:
           CLUSTER: dev-gcp
           RESOURCE: nais/nais.yaml
@@ -28,8 +30,10 @@ jobs:
     needs: deploy-to-dev
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: nais/deploy/actions/deploy@v2
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: nais/deploy/actions/deploy@fc3eae3edebabdf67f7592102ae16176d5ba3b5f # v2
         env:
           CLUSTER: prod-gcp
           RESOURCE: nais/nais.yaml,nais/alerts.yaml

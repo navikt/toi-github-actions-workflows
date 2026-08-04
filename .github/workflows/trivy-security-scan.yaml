@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Authenticate to access Docker image
         id: login
-        uses: nais/login@v0
+        uses: nais/login@bb6c3e1e14e53d40d69d0d092bd2fce2e39ae3bf # v0
         with:
           team: toi
 
@@ -30,7 +30,7 @@ jobs:
           echo "IMAGE=${IMAGE}" >> $GITHUB_ENV
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         env:
           TRIVY_DB_REPOSITORY: 'public.ecr.aws/aquasecurity/trivy-db:latest' # Workaround until this issue is resolved: https://github.com/aquasecurity/trivy-action/issues/389
           TRIVY_JAVA_DB_REPOSITORY: 'public.ecr.aws/aquasecurity/trivy-java-db:1' # Workaround until this issue is resolved: https://github.com/aquasecurity/trivy-action/issues/389
@@ -42,6 +42,6 @@ jobs:
           limit-severities-for-sarif: true
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@d1ba80a13dd99fba24a470575428917156a28b43 # v4.37.5
         with:
           sarif_file: 'trivy-results.sarif'
