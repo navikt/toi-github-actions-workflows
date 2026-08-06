@@ -54,8 +54,8 @@ git pull origin main
 ### 3-A: Non-breaking change
 Flytt eksisterende tag til nyeste commit:
 ```bash
-git tag -fa v14 -m "v14 minor change" 
-git push origin refs/tags/v14 --force
+git tag -fa v15 -m "v15 non-breaking change" 
+git push origin refs/tags/v15 --force
 ```
 Du er ferdig. Endringen vil bli tatt i bruk alle steder som allerede referer til denne versjonen, uten at du trenger å endre noe på bruksstedet.
 
