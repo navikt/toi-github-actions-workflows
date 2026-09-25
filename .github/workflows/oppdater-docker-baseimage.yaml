@@ -38,18 +38,18 @@ jobs:
           DEPLOYED_DIGEST: ${{ steps.siste-deploy.outputs.digest }}
         run: |
           if [ -z "$DEPLOYED_IMAGE" ] || [ -z "$DEPLOYED_DIGEST" ]; then
-            echo "Fant ingen lagret base-image digest. Deployer til prod for å få en."
+            echo "Fant ingen base-image digest for siste deploy til prod. Deployer til prod for å få en."
             echo "digests-er-like=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          current-digest-in-remote-registry=$(docker buildx imagetools inspect "$DEPLOYED_IMAGE" --format '{{json .Manifest}}' | jq -r '.digest')
-          [[ "$current-digest-in-remote-registry" == sha256:* ]]
+          current_digest_in_remote_registry=$(docker buildx imagetools inspect "$DEPLOYED_IMAGE" --format '{{json .Manifest}}' | jq -r '.digest')
+          [[ "$current_digest_in_remote_registry" == sha256:* ]]
           echo "Siste deployede base-image ref: $DEPLOYED_IMAGE"
           echo "Siste deployede base-image digest: $DEPLOYED_DIGEST"
-          echo "Nåværende digest i remote registry: $current-digest-in-remote-registry"
+          echo "Nåværende digest i remote registry: $current_digest_in_remote_registry"
 
-          if [ "$current-digest-in-remote-registry" = "$DEPLOYED_DIGEST" ]; then
+          if [ "$current_digest_in_remote_registry" = "$DEPLOYED_DIGEST" ]; then
             echo "digests-er-like=true" >> "$GITHUB_OUTPUT"
           else
             echo "digests-er-like=false" >> "$GITHUB_OUTPUT"
