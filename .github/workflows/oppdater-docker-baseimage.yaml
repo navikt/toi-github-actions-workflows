@@ -12,7 +12,7 @@ jobs:
       digests-er-like: ${{ steps.sammenlign.outputs.digests-er-like }}
 
     steps:
-      # Workflow-en "lagre-docker-baseimage-digest" skal ha lagret  image.txt og digest.txt etter hver vellykket deploy til prod
+      # Workflow-en "lagre-docker-baseimage-digest" skal ha lagret image.txt og digest.txt etter hver vellykket deploy til prod
       - name: Hent sist deployede baseimage navn og digest
         id: siste-deploy
         env:
@@ -38,6 +38,10 @@ jobs:
           DEPLOYED_DIGEST: ${{ steps.siste-deploy.outputs.digest }}
         run: |
           set -euo pipefail
+          
+          echo "Siste deployede base-image ref: $DEPLOYED_IMAGE"
+          echo "Siste deployede base-image digest: $DEPLOYED_DIGEST"
+
           if [ -z "$DEPLOYED_IMAGE" ] || [ -z "$DEPLOYED_DIGEST" ]; then
             echo "Fant ingen base-image digest for siste deploy til prod."
             echo "digests-er-like=false" >> "$GITHUB_OUTPUT"
@@ -45,10 +49,8 @@ jobs:
           fi
 
           current_digest_in_remote_registry=$(docker buildx imagetools inspect "$DEPLOYED_IMAGE" --format '{{json .Manifest}}' | jq -r '.digest')
-          [[ "$current_digest_in_remote_registry" == sha256:* ]]
-          echo "Siste deployede base-image ref: $DEPLOYED_IMAGE"
-          echo "Siste deployede base-image digest: $DEPLOYED_DIGEST"
           echo "Nåværende digest i remote registry: $current_digest_in_remote_registry"
+          [[ "$current_digest_in_remote_registry" == sha256:* ]]
 
           if [ "$current_digest_in_remote_registry" = "$DEPLOYED_DIGEST" ]; then
             echo "digests-er-like=true" >> "$GITHUB_OUTPUT"
