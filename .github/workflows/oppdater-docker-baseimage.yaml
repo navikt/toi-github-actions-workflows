@@ -5,6 +5,7 @@ on:
         required: true
         type: string
         description: 'Filnavnet til appens deploy-workflow'
+
 jobs:
   sammenlign-docker-baseimage-versjoner:
     runs-on: ubuntu-latest
@@ -64,11 +65,10 @@ jobs:
     if: ${{ needs.sammenlign-docker-baseimage-versjoner.outputs.digests-er-like != 'true' }}
     runs-on: ubuntu-latest
     steps:
-      # workflow_dispatch er et av få events som GITHUB_TOKEN kan starte nye kjøringer med
       - name: Kjør workflow ${{ inputs.deploy-workflow-filnavn }}
         env:
           GH_TOKEN: ${{ github.token }}
-          DEPLOY_WORKFLOW: ${{ inputs.deploy-workflow-filnavn }}
+          DEPLOY_WORKFLOW_FILNAVN: ${{ inputs.deploy-workflow-filnavn }}
         run: |
           default_branch=$(gh api "repos/$GITHUB_REPOSITORY" --jq '.default_branch')
-          gh workflow run "$DEPLOY_WORKFLOW" --repo "$GITHUB_REPOSITORY" --ref "$default_branch"
+          gh workflow run "$DEPLOY_WORKFLOW_FILNAVN" --repo "$GITHUB_REPOSITORY" --ref "$default_branch"

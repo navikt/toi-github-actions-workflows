@@ -1,0 +1,35 @@
+name: Lagre Docker baseimage digest
+
+on:
+  workflow_call:
+    inputs:
+      image-ref:
+        required: true
+        type: string
+        description: Docker baseimage ref
+      image-digest:
+        required: true
+        type: string
+        description: Docker baseimage digest
+
+jobs:
+  lagre:
+    name: Lagre Docker baseimage digest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skriv til fil
+        env:
+          IMAGE: ${{ inputs.image-ref }}
+          DIGEST: ${{ inputs.image-digest }}
+        run: |
+          printf '%s' "$IMAGE" > image.txt
+          printf '%s' "$DIGEST" > digest.txt
+
+      - name: Last opp
+        uses: actions/upload-artifact@v4 # GITHUB_TOKEN kan ikke skrive repo-variabler, så digesten lagres som artifact
+        with:
+          name: baseimage-digest
+          path: |
+            image.txt
+            digest.txt
+          retention-days: 90

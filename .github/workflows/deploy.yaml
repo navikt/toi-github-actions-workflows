@@ -7,7 +7,13 @@ on:
       deploy-to-dev-if-branch-name-is:
         required: false
         type: string
-
+    outputs:
+      image-ref:
+        description: "Ref til Docker image som ble deployet til prod"
+        value: ${{ jobs.deploy-to-prod.outputs.image }}
+      image-digest:
+        description: "Digest til Docker image som ble deployet til prod"
+        value: ${{ jobs.deploy-to-prod.outputs.digest }}
 jobs:
   deploy-to-dev:
     name: Deploy to dev
@@ -39,3 +45,4 @@ jobs:
           RESOURCE: nais/nais.yaml,nais/alerts.yaml
           VAR: image=${{ inputs.image }}
           VARS: nais/prod-gcp.json
+      # TODO Lagre image digest ved å bruke lagre-docker-baseimage-digest.yaml workflow
