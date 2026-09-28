@@ -38,11 +38,11 @@ jobs:
           CLUSTER: prod-gcp
           RESOURCE: nais/nais.yaml,nais/alerts.yaml
           VAR: image=${{ inputs.image }}
-          VARS: nais/prod-gcp.json
 
   call-lagre-docker-baseimage-digest:
     needs: deploy-to-prod
-    uses: ./.github/workflows/lagre-docker-baseimage-digest.yaml@autobump-docker-baseimage
-    with:
-      baseimage-ref: # TODO
-      baseimage-digest: # TODO
+    steps:
+      - uses: ./.github/workflows/lagre-docker-baseimage-digest.yaml@autobump-docker-baseimage
+        with:
+          baseimage-ref: # TODO
+          baseimage-digest: # TODO
