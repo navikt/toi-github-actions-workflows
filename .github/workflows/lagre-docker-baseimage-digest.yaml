@@ -16,8 +16,7 @@ jobs:
   lagre:
     name: Lagre Docker baseimage digest
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    permissions: {}
     timeout-minutes: 10
     steps:
       - name: Skriv til fil

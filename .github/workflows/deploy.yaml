@@ -63,5 +63,4 @@ jobs:
     with:
       baseimage-tagged-ref: ${{ inputs.baseimage-tagged-ref }}
       baseimage-digest: ${{ inputs.baseimage-digest }}
-    permissions:
-      contents: read
+    permissions: {}
