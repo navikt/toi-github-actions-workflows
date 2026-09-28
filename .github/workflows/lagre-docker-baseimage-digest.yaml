@@ -19,6 +19,7 @@ jobs:
     permissions: {}
     timeout-minutes: 10
     steps:
+      # Det som skrives her er ment å bli lest av workflow-en "oppdater-docker-baseimage"
       - name: Skriv til fil
         env:
           BASEIMAGE_TAGGED_REF: ${{ inputs.baseimage-tagged-ref }}

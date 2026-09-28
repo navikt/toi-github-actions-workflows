@@ -58,9 +58,9 @@ jobs:
           VARS: nais/prod-gcp.json
 
   call-lagre-docker-baseimage-digest:
-    needs: deploy-to-dev # TODO husk bytt til prod etter testing
+    needs: deploy-to-prod
     uses: navikt/toi-github-actions-workflows/.github/workflows/lagre-docker-baseimage-digest.yaml@autobump-docker-baseimage # zizmor: ignore[ref-confusion,unpinned-uses]
     with:
       baseimage-tagged-ref: ${{ inputs.baseimage-tagged-ref }}
       baseimage-digest: ${{ inputs.baseimage-digest }}
-    permissions: {}
+    permissions: { }

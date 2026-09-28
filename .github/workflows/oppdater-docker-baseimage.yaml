@@ -17,8 +17,8 @@ jobs:
       digests-er-like: ${{ steps.sammenlign.outputs.digests-er-like }}
 
     steps:
-      # Workflow-en "lagre-docker-baseimage-digest" lagrer baseimage-tagged-ref.txt og baseimage-digest.txt etter vellykket deploy til prod
-      - name: Hent sist deployede baseimage-referanse med tag og digest
+      # Workflow-en "lagre-docker-baseimage-digest" skal ha lagret baseimage-tagged-ref.txt og baseimage-digest.txt etter vellykket deploy til prod
+      - name: Hent sist deployede runtime baseimage digest
         id: siste-deploy
         env:
           GH_TOKEN: ${{ github.token }}
@@ -79,7 +79,7 @@ jobs:
   deploy:
     name: Bygg og deploy
     needs: [ sammenlign-docker-baseimage-versjoner ]
-    if: ${{ needs.sammenlign-docker-baseimage-versjoner.outputs.digests-er-like == 'true' }} # TODO Endre til != etter testing
+    if: ${{ needs.sammenlign-docker-baseimage-versjoner.outputs.digests-er-like != 'true' }}
     runs-on: ubuntu-latest
     permissions:
       actions: write
