@@ -79,7 +79,7 @@ jobs:
   deploy:
     name: Bygg og deploy
     needs: [ sammenlign-docker-baseimage-versjoner ]
-    if: ${{ needs.sammenlign-docker-baseimage-versjoner.outputs.digests-er-like != 'true' }}
+    if: ${{ needs.sammenlign-docker-baseimage-versjoner.outputs.digests-er-like == 'true' }} # TODO Endre til != etter testing
     runs-on: ubuntu-latest
     permissions:
       actions: write
