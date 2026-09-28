@@ -3,11 +3,11 @@ name: Lagre Docker baseimage digest
 on:
   workflow_call:
     inputs:
-      image-ref:
+      baseimage-ref:
         required: true
         type: string
         description: Docker baseimage ref
-      image-digest:
+      baseimage-digest:
         required: true
         type: string
         description: Docker baseimage digest
@@ -19,8 +19,8 @@ jobs:
     steps:
       - name: Skriv til fil
         env:
-          IMAGE: ${{ inputs.image-ref }}
-          DIGEST: ${{ inputs.image-digest }}
+          IMAGE: ${{ inputs.baseimage-ref }}
+          DIGEST: ${{ inputs.baseimage-digest }}
         run: |
           printf '%s' "$IMAGE" > image.txt
           printf '%s' "$DIGEST" > digest.txt
