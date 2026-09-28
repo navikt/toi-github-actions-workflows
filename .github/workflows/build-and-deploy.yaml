@@ -5,23 +5,30 @@ on:
         required: true
         type: string
         description: "E.g. '17' or '21'"
+      baseimage-tagged-ref:
+        required: true
+        type: string
+        description: "Full tagged reference to the runtime base image (registry/path:tag)"
       deploy-to-dev-if-branch-name-is:
         required: false
         type: string
 jobs:
   call-build-java-gradlew:
-    uses: navikt/toi-github-actions-workflows/.github/workflows/build-java-gradlew.yaml@v15 # zizmor: ignore[ref-confusion,unpinned-uses]
+    uses: navikt/toi-github-actions-workflows/.github/workflows/build-java-gradlew.yaml@autobump-docker-baseimage # zizmor: ignore[ref-confusion,unpinned-uses]
     with:
       java-version: ${{ inputs.java-version }}
+      baseimage-tagged-ref: ${{ inputs.baseimage-tagged-ref }}
     permissions:
       contents: read
       id-token: write
 
   call-deploy:
     needs: call-build-java-gradlew
-    uses: navikt/toi-github-actions-workflows/.github/workflows/deploy.yaml@v15 # zizmor: ignore[ref-confusion,unpinned-uses]
+    uses: navikt/toi-github-actions-workflows/.github/workflows/deploy.yaml@autobump-docker-baseimage # zizmor: ignore[ref-confusion,unpinned-uses]
     with:
       image: ${{ needs.call-build-java-gradlew.outputs.image }}
+      baseimage-tagged-ref: ${{ needs.call-build-java-gradlew.outputs.baseimage-tagged-ref }}
+      baseimage-digest: ${{ needs.call-build-java-gradlew.outputs.baseimage-digest }}
       deploy-to-dev-if-branch-name-is: ${{ inputs.deploy-to-dev-if-branch-name-is }}
     permissions:
       contents: read

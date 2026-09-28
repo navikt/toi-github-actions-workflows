@@ -3,10 +3,10 @@ name: Lagre Docker baseimage digest
 on:
   workflow_call:
     inputs:
-      baseimage-ref:
+      baseimage-tagged-ref:
         required: true
         type: string
-        description: Docker baseimage ref
+        description: Full tagged reference to the runtime base image (registry/path:tag)
       baseimage-digest:
         required: true
         type: string
@@ -16,20 +16,30 @@ jobs:
   lagre:
     name: Lagre Docker baseimage digest
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 10
     steps:
       - name: Skriv til fil
         env:
-          IMAGE: ${{ inputs.baseimage-ref }}
-          DIGEST: ${{ inputs.baseimage-digest }}
+          BASEIMAGE_TAGGED_REF: ${{ inputs.baseimage-tagged-ref }}
+          BASEIMAGE_DIGEST: ${{ inputs.baseimage-digest }}
         run: |
-          printf '%s' "$IMAGE" > image.txt
-          printf '%s' "$DIGEST" > digest.txt
+          set -euo pipefail
+          
+          if [[ -z "$BASEIMAGE_TAGGED_REF" || "$BASEIMAGE_TAGGED_REF" == *$'\n'* || "$BASEIMAGE_TAGGED_REF" == *$'\r'* || ! "$BASEIMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::Ugyldig baseimage-tagged-ref eller baseimage-digest"
+            exit 1
+          fi
+          
+          printf '%s' "$BASEIMAGE_TAGGED_REF" > baseimage-tagged-ref.txt
+          printf '%s' "$BASEIMAGE_DIGEST" > baseimage-digest.txt
 
       - name: Last opp
-        uses: actions/upload-artifact@v4 # GITHUB_TOKEN kan ikke skrive repo-variabler, så digesten lagres som artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: baseimage-digest
           path: |
-            image.txt
-            digest.txt
+            baseimage-tagged-ref.txt
+            baseimage-digest.txt
           retention-days: 90

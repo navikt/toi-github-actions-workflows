@@ -2,6 +2,31 @@
 
 Hva er det? Se https://docs.github.com/en/actions/sharing-automations/reusing-workflows
 
+## Automatisk oppdatering av runtime-baseimage
+
+Appens workflow oppgir en full referanse med tag i `baseimage-tagged-ref`, ikke bare taggen `openjdk-25`:
+
+```yaml
+jobs:
+  build-and-deploy:
+    uses: navikt/toi-github-actions-workflows/.github/workflows/build-and-deploy.yaml@v16
+    with:
+      java-version: '25'
+      baseimage-tagged-ref: europe-north1-docker.pkg.dev/cgr-nav/pull-through/nav.no/jre:openjdk-25
+    permissions:
+      contents: read
+      id-token: write
+```
+
+Siste `FROM` i appens Dockerfile må bruke build-argumentet:
+
+```dockerfile
+ARG BASE_IMAGE_DIGEST_PINNED_REF
+FROM ${BASE_IMAGE_DIGEST_PINNED_REF}
+```
+
+`baseimage-tagged-ref` er hele `registry/path:tag`, `baseimage-digest` er `sha256:...`, og `BASE_IMAGE_DIGEST_PINNED_REF` er `registry/path:tag@sha256:...`. Byggeworkflow-en slår opp digesten i GAR og sender den digest-låste referansen til Dockerfile. Dermed bruker bygget den samme digesten som lagres sammen med den taggede referansen i artifactet etter vellykket prod-deploy. `oppdater-docker-baseimage.yaml` sammenligner senere den lagrede digesten med digesten som den taggede referansen peker på nå. Kallere av den workflow-en må gi jobben `actions: write` (dekker også lesing av artifacts) og `id-token: write` for GAR-innlogging. Bruk branch-referansen i interne kall under testing; bytt til ny versjon før release.
+
 # Versjonering
 Tidligere brukte ikke appene våre versjoner da de refererte til egenskrevne workflows. Vi bare referete til nyeste commit på main-branchen, ved å skrive `@main` i
 ```

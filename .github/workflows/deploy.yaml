@@ -4,6 +4,15 @@ on:
       image:
         required: true
         type: string
+        description: "Canonical reference to the built application image"
+      baseimage-tagged-ref:
+        required: true
+        type: string
+        description: "Full tagged reference to the runtime base image (registry/path:tag)"
+      baseimage-digest:
+        required: true
+        type: string
+        description: "SHA-256 digest of the runtime base image used in the build"
       deploy-to-dev-if-branch-name-is:
         required: false
         type: string
@@ -13,6 +22,10 @@ jobs:
     name: Deploy to dev
     if: github.ref == 'refs/heads/main' || github.ref == format('refs/heads/{0}', inputs.deploy-to-dev-if-branch-name-is)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -29,6 +42,10 @@ jobs:
     if: github.ref == 'refs/heads/main'
     needs: deploy-to-dev
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -38,11 +55,13 @@ jobs:
           CLUSTER: prod-gcp
           RESOURCE: nais/nais.yaml,nais/alerts.yaml
           VAR: image=${{ inputs.image }}
+          VARS: nais/prod-gcp.json # TODO Hvorfor ble denne lagt til? Unødvendig?
 
   call-lagre-docker-baseimage-digest:
     needs: deploy-to-prod
-    steps:
-      - uses: ./.github/workflows/lagre-docker-baseimage-digest.yaml@autobump-docker-baseimage
-        with:
-          baseimage-ref: # TODO
-          baseimage-digest: # TODO
+    uses: navikt/toi-github-actions-workflows/.github/workflows/lagre-docker-baseimage-digest.yaml@autobump-docker-baseimage # zizmor: ignore[ref-confusion,unpinned-uses]
+    with:
+      baseimage-tagged-ref: ${{ inputs.baseimage-tagged-ref }}
+      baseimage-digest: ${{ inputs.baseimage-digest }}
+    permissions:
+      contents: read
