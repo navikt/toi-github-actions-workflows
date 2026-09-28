@@ -55,7 +55,7 @@ jobs:
           CLUSTER: prod-gcp
           RESOURCE: nais/nais.yaml,nais/alerts.yaml
           VAR: image=${{ inputs.image }}
-          VARS: nais/prod-gcp.json # TODO Hvorfor ble denne lagt til? Unødvendig?
+          VARS: nais/prod-gcp.json
 
   call-lagre-docker-baseimage-digest:
     needs: deploy-to-prod
