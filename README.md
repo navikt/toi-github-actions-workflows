@@ -2,9 +2,14 @@
 
 Hva er det? Se https://docs.github.com/en/actions/sharing-automations/reusing-workflows
 
-## Automatisk oppdatering av runtime-baseimage
+## Automatisk oppdatering av Docker run-time base-image
 
-Appens workflow oppgir en full referanse med tag i `baseimage-tagged-ref`, ikke bare taggen `openjdk-25`:
+### Hvorfor
+Det oppdages stadig nye sikkerhetssissues i Docker "base image"-ene vi bruker. Image-ene patches fortløpende av leverandøren. De patchede versjonene publiseres med samme tag. Hver gang vi bygger henter vi ned nyeste versjon av image-et med den tag-en vi referer til til. Det betyr at hver gang vi bygger og deployer til prod så så får vi sannsnynligvis lukket noen sikkerhetsissues. Vi ønsker å slippe å gjøre dette manuelt. Derfor bruker vi en scheduled workflow som regelmessig sjekker om det foreligger en ny versjon, og i så fall bygger og deployer til prod.
+
+### Hvordan
+
+Hvilket Docker runtime baseimage som skal brukes oppgis i appens workflow, i `baseimage-tagged-ref`:
 
 ```yaml
 jobs:
@@ -18,14 +23,17 @@ jobs:
       id-token: write
 ```
 
-Siste `FROM` i appens Dockerfile må bruke build-argumentet:
+Appens Dockerfile må bruke build-argumentet i siste (typisk den eneste) `FROM`:
 
 ```dockerfile
 ARG BASE_IMAGE_DIGEST_PINNED_REF
 FROM ${BASE_IMAGE_DIGEST_PINNED_REF}
 ```
 
-`baseimage-tagged-ref` er hele `registry/path:tag`, `baseimage-digest` er `sha256:...`, og `BASE_IMAGE_DIGEST_PINNED_REF` er `registry/path:tag@sha256:...`. Byggeworkflow-en slår opp digesten i GAR og sender den digest-låste referansen til Dockerfile. Dermed bruker bygget den samme digesten som lagres sammen med den taggede referansen i artifactet etter vellykket prod-deploy. `oppdater-docker-baseimage.yaml` sammenligner senere den lagrede digesten med digesten som den taggede referansen peker på nå. Kallere av den workflow-en må gi jobben `actions: write` (dekker også lesing av artifacts) og `id-token: write` for GAR-innlogging. Bruk branch-referansen i interne kall under testing; bytt til ny versjon før release.
+`baseimage-tagged-ref` er hele `registry/path:tag`, `baseimage-digest` er `sha256:...`, og `BASE_IMAGE_DIGEST_PINNED_REF` er `registry/path:tag@sha256:...`.
+
+Byggeworkflow-en starter med å slå opp baseimage digest-en i GAR (Github Artifact Registry), for å sikre at det er den samme digest-en som blir sendt til Dockerfile som vi bruker til sammenligning senere.
+
 
 # Versjonering
 Tidligere brukte ikke appene våre versjoner da de refererte til egenskrevne workflows. Vi bare referete til nyeste commit på main-branchen, ved å skrive `@main` i
@@ -73,7 +81,7 @@ jobs:
 ### 2: Sørg for at du er på main og har siste versjon lokalt
 ```bash
 git checkout main
-git pull origin main
+git pull
 ```
 
 ### 3-A: Non-breaking change
