@@ -107,8 +107,8 @@ git pull
 ### 3-A: Non-breaking change
 Flytt eksisterende tag til nyeste commit:
 ```bash
-git tag -fa v15 -m "v15 non-breaking change" 
-git push origin refs/tags/v15 --force
+git tag -fa v16 -m "v16 non-breaking change" 
+git push origin refs/tags/v16 --force
 ```
 Du er ferdig. Endringen vil bli tatt i bruk alle steder som allerede referer til denne versjonen, uten at du trenger å endre noe på bruksstedet.
 
@@ -116,8 +116,8 @@ Du er ferdig. Endringen vil bli tatt i bruk alle steder som allerede referer til
 1. Opprett ny tag med det nye versjonsnummeret:
 
 ```bash
-git tag -a v15 -m "v15 breaking change"
-git push origin refs/tags/v15
+git tag -a v17 -m "v17 breaking change"
+git push origin refs/tags/v17
 ```
 
 2. Oppdater workflows i appene til å bruke det nye versjonsnumeret.
