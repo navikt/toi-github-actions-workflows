@@ -5,16 +5,28 @@ on:
         required: true
         type: string
         description: "JDK version to be used on the Github workflow runner where the app is built. E.g. '17' or '21'"
+      baseimage-tagged-ref:
+        required: true
+        type: string
+        description: "Full tagged reference to the runtime base image (registry/path:tag)"
     outputs:
       image:
-        description: "Name of the built Docker image"
+        description: "Canonical reference to the built application image"
         value: ${{ jobs.build-and-publish.outputs.image }}
+      baseimage-digest:
+        description: "Digest used to build the runtime base image"
+        value: ${{ jobs.build-and-publish.outputs.baseimage-digest }}
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 30
     outputs:
       image: ${{ steps.docker.outputs.image }}
+      baseimage-digest: ${{ steps.baseimage.outputs.baseimage-digest }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -28,9 +40,44 @@ jobs:
 
       - run: ./gradlew build
 
+      - uses: nais/login@bb6c3e1e14e53d40d69d0d092bd2fce2e39ae3bf # v0
+        with:
+          team: toi
+
+      - name: Finn digest for runtime-baseimage
+        id: baseimage
+        env:
+          BASEIMAGE_TAGGED_REF: ${{ inputs.baseimage-tagged-ref }}
+        run: |
+          set -euo pipefail
+         
+          # Unngå at argumentet vi skal sende til Dockerfile blir ignorert, f.eks. fordi Dockerfile hardkoder baseimage,
+          # som vil føre til at vi lagrer en annen digest enn den som ble deployet
+          runtime_from=$(awk 'toupper($1) == "FROM" { image = $2 ~ /^--platform=/ ? $3 : $2 } END { print image }' Dockerfile)
+          if [[ "$runtime_from" != '$BASE_IMAGE_DIGEST_PINNED_REF' && "$runtime_from" != '${BASE_IMAGE_DIGEST_PINNED_REF}' ]]; then
+            echo "::error::Siste FROM i Dockerfile må bruke BASE_IMAGE_DIGEST_PINNED_REF som build-argument"
+            exit 1
+          fi
+          
+          if [[ ! "$BASEIMAGE_TAGGED_REF" =~ ^[^[:space:]@]+:[^[:space:]@]+$ ]]; then
+            echo "::error::baseimage-tagged-ref må være en full image-referanse med tag, uten digest"
+            exit 1
+          fi
+
+          baseimage_digest=$(docker buildx imagetools inspect "$BASEIMAGE_TAGGED_REF" --format '{{json .Manifest}}' | jq -er '.digest')
+          if [[ ! "$baseimage_digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::Fant ingen gyldig SHA-256-digest for runtime-baseimaget"
+            exit 1
+          fi
+          
+          echo "baseimage-digest=$baseimage_digest" >> "$GITHUB_OUTPUT"
+          echo "baseimage-digest-pinned-ref=$BASEIMAGE_TAGGED_REF@$baseimage_digest" >> "$GITHUB_OUTPUT"
+
       - uses: nais/docker-build-push@2d2b0a7193e65422b7f0355d4afb445e0a8b2cc3 # v0
         id: docker
         with:
           team: toi
           tag: ${{ contains(fromJSON('["refs/heads/master", "refs/heads/main"]'), github.ref) && 'latest' || github.sha }}
           dockerfile: Dockerfile
+          build_args: |
+            BASE_IMAGE_DIGEST_PINNED_REF=${{ steps.baseimage.outputs.baseimage-digest-pinned-ref }}

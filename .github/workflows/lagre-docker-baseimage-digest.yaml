@@ -1,0 +1,45 @@
+name: Lagre Docker baseimage digest
+
+on:
+  workflow_call:
+    inputs:
+      baseimage-tagged-ref:
+        required: true
+        type: string
+        description: Full tagged reference to the runtime base image (registry/path:tag)
+      baseimage-digest:
+        required: true
+        type: string
+        description: Docker baseimage digest
+
+jobs:
+  lagre:
+    name: Lagre Docker run-time base-image digest
+    runs-on: ubuntu-latest
+    permissions: {}
+    timeout-minutes: 10
+    steps:
+      # Det som skrives her er ment å bli lest av workflow-en "oppdater-docker-baseimage"
+      - name: Skriv til fil
+        env:
+          BASEIMAGE_TAGGED_REF: ${{ inputs.baseimage-tagged-ref }}
+          BASEIMAGE_DIGEST: ${{ inputs.baseimage-digest }}
+        run: |
+          set -euo pipefail
+          
+          if [[ -z "$BASEIMAGE_TAGGED_REF" || "$BASEIMAGE_TAGGED_REF" == *$'\n'* || "$BASEIMAGE_TAGGED_REF" == *$'\r'* || ! "$BASEIMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::Ugyldig baseimage-tagged-ref eller baseimage-digest"
+            exit 1
+          fi
+          
+          printf '%s' "$BASEIMAGE_TAGGED_REF" > baseimage-tagged-ref.txt
+          printf '%s' "$BASEIMAGE_DIGEST" > baseimage-digest.txt
+
+      - name: Last opp
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: baseimage-digest
+          path: |
+            baseimage-tagged-ref.txt
+            baseimage-digest.txt
+          retention-days: 90

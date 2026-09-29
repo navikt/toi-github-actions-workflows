@@ -2,6 +2,59 @@
 
 Hva er det? Se https://docs.github.com/en/actions/sharing-automations/reusing-workflows
 
+## Automatisk oppdatering av Docker run-time base-image
+
+### Hvorfor
+Det oppdages stadig nye sikkerhetssissues i Docker "base image"-ene vi bruker. Image-ene patches fortløpende av leverandøren. De patchede versjonene publiseres med samme tag. Hver gang vi bygger henter vi ned nyeste versjon av image-et med den tag-en vi referer til. Det betyr at hver gang vi bygger og deployer til prod så får vi sannsnynligvis lukket noen sikkerhetsissues. Det vil være bra for sikkerheten å gjøre dette ofte, f.eks. daglig,  men vi ønsker å slippe å gjøre det manuelt. Derfor bruker vi en scheduled workflow, som regelmessig sjekker om det foreligger en ny versjon, og i så fall bygger og deployer til prod.
+
+### Hvordan
+#### Terminologi
+Har forsøkt å bruke Docker sin terminologi i navngivingen av parametre:
+* `baseimage-tagged-ref` er hele `registry/path:tag`
+* `baseimage-digest` er `sha256:...`
+* `BASE_IMAGE_DIGEST_PINNED_REF` er `registry/path:tag@sha256:...`
+
+#### Angivelse av base-image flyttes ut av Dockerfile
+Hvilket Docker run-time base-image som skal brukes oppgis i appens workflow, i `baseimage-tagged-ref`:
+```yaml
+jobs:
+  build-and-deploy:
+    uses: navikt/toi-github-actions-workflows/.github/workflows/build-and-deploy.yaml@v16
+    with:
+      java-version: '25'
+      baseimage-tagged-ref: europe-north1-docker.pkg.dev/cgr-nav/pull-through/nav.no/jre:openjdk-25
+    permissions:
+      contents: read
+      id-token: write
+```
+Appens Dockerfile må bruke build-argumentet i siste (typisk eneste) `FROM`:
+```dockerfile
+ARG BASE_IMAGE_DIGEST_PINNED_REF
+FROM ${BASE_IMAGE_DIGEST_PINNED_REF}
+```
+
+#### Opprett en scheduled workflow
+I appen, legg til en scheduled workflow, for eksempel `.github/workflows/oppdater-docker-baseimage.yaml`:
+ ```yaml
+ name: Oppdater Docker run-time base-image
+ on:
+   schedule:
+     - cron: '40 5 * * 1'
+   workflow_dispatch:
+
+ jobs:
+   call-oppdater-docker-baseimage:
+     uses: navikt/toi-github-actions-workflows/.github/workflows/oppdater-docker-baseimage.yaml@v16
+     with:
+       deploy-workflow-filnavn: deploy.yml
+     permissions:
+       id-token: write
+       actions: write
+ ```
+I eksemplet ovenfor er `deploy.yaml` filnavnet på appens deploy-workflow, altså den som kaller `toi-github-actions-workflows/.github/workflows/build-and-deploy.yaml`. Appens deploy-workflow må ha `workflow_dispatch` under `on:` for at din nye scheduled workflow skal kunne starte deploy-workflowen.
+
+
+
 # Versjonering
 Tidligere brukte ikke appene våre versjoner da de refererte til egenskrevne workflows. Vi bare referete til nyeste commit på main-branchen, ved å skrive `@main` i
 ```
@@ -48,7 +101,7 @@ jobs:
 ### 2: Sørg for at du er på main og har siste versjon lokalt
 ```bash
 git checkout main
-git pull origin main
+git pull
 ```
 
 ### 3-A: Non-breaking change

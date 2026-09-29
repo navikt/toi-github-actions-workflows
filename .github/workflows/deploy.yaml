@@ -4,15 +4,24 @@ on:
       image:
         required: true
         type: string
+        description: "Canonical reference to the built application image"
       deploy-to-dev-if-branch-name-is:
         required: false
         type: string
+    outputs:
+      deploy-to-prod-was-successful:
+        description: Whether the production deployment completed successfully
+        value: ${{ jobs.deploy-to-prod.outputs.deploy-to-prod-was-successful }}
 
 jobs:
   deploy-to-dev:
     name: Deploy to dev
     if: github.ref == 'refs/heads/main' || github.ref == format('refs/heads/{0}', inputs.deploy-to-dev-if-branch-name-is)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -29,6 +38,12 @@ jobs:
     if: github.ref == 'refs/heads/main'
     needs: deploy-to-dev
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 15
+    outputs:
+      deploy-to-prod-was-successful: ${{ steps.mark-deployed.outputs.deploy-to-prod-was-successful }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -39,3 +54,6 @@ jobs:
           RESOURCE: nais/nais.yaml,nais/alerts.yaml
           VAR: image=${{ inputs.image }}
           VARS: nais/prod-gcp.json
+      - name: Mark production deployment as successful
+        id: mark-deployed
+        run: echo "deploy-to-prod-was-successful=true" >> "$GITHUB_OUTPUT"

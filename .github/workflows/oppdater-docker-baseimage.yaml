@@ -1,0 +1,95 @@
+on:
+  workflow_call:
+    inputs:
+      deploy-workflow-filnavn:
+        required: true
+        type: string
+        description: 'Filnavnet til appens deploy-workflow'
+
+jobs:
+  sammenlign-docker-baseimage-versjoner:
+    name: Sammenlign Docker base-image versjoner
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      id-token: write
+    timeout-minutes: 15
+    outputs:
+      digests-er-like: ${{ steps.sammenlign.outputs.digests-er-like }}
+
+    steps:
+      # Workflow-en "lagre-docker-baseimage-digest" skal ha lagret baseimage-tagged-ref.txt og baseimage-digest.txt etter vellykket deploy til prod
+      - name: Hent sist deployede run-time base-image digest
+        id: siste-deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          
+          artifact_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=baseimage-digest&per_page=100" --jq '[.artifacts[] | select(.expired == false)] | first | .id // empty')
+          if [ -z "$artifact_id" ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > /tmp/baseimage.zip
+          baseimage_tagged_ref=$(unzip -p /tmp/baseimage.zip baseimage-tagged-ref.txt)
+          baseimage_digest=$(unzip -p /tmp/baseimage.zip baseimage-digest.txt)
+          if [[ -z "$baseimage_tagged_ref" || "$baseimage_tagged_ref" == *$'\n'* || "$baseimage_tagged_ref" == *$'\r'* || ! "$baseimage_digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::Ugyldig baseimage-digest-artifact"
+            exit 1
+          fi
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          echo "baseimage-tagged-ref=$baseimage_tagged_ref" >> "$GITHUB_OUTPUT"
+          echo "baseimage-digest=$baseimage_digest" >> "$GITHUB_OUTPUT"
+
+      - name: Autentiser mot GAR
+        if: steps.siste-deploy.outputs.found == 'true'
+        uses: nais/login@bb6c3e1e14e53d40d69d0d092bd2fce2e39ae3bf # v0
+        with:
+          team: toi
+
+      - name: Sammenlign digests
+        id: sammenlign
+        env:
+          DEPLOYED_BASEIMAGE_TAGGED_REF: ${{ steps.siste-deploy.outputs.baseimage-tagged-ref }}
+          DEPLOYED_BASEIMAGE_DIGEST: ${{ steps.siste-deploy.outputs.baseimage-digest }}
+          ARTIFACT_FOUND: ${{ steps.siste-deploy.outputs.found }}
+        run: |
+          set -euo pipefail
+          
+          if [[ "$ARTIFACT_FOUND" != 'true' ]]; then
+            echo "Fant ingen base-image digest for siste deploy til prod."
+            echo "digests-er-like=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          current_baseimage_digest_in_GAR=$(docker buildx imagetools inspect "$DEPLOYED_BASEIMAGE_TAGGED_REF" --format '{{json .Manifest}}' | jq -er '.digest')
+          echo "Nåværende baseimage-digest i remote registry: $current_baseimage_digest_in_GAR"
+          if [[ ! "$current_baseimage_digest_in_GAR" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::Ugyldig digest fra GAR"
+            exit 1
+          fi
+
+          if [ "$current_baseimage_digest_in_GAR" = "$DEPLOYED_BASEIMAGE_DIGEST" ]; then
+            echo "digests-er-like=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "digests-er-like=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    name: Bygg og deploy
+    needs: [ sammenlign-docker-baseimage-versjoner ]
+    if: ${{ needs.sammenlign-docker-baseimage-versjoner.outputs.digests-er-like != 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    timeout-minutes: 10
+    steps:
+      - name: Kjør workflow ${{ inputs.deploy-workflow-filnavn }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPLOY_WORKFLOW_FILNAVN: ${{ inputs.deploy-workflow-filnavn }}
+        run: |
+          default_branch=$(gh api "repos/$GITHUB_REPOSITORY" --jq '.default_branch')
+          gh workflow run "$DEPLOY_WORKFLOW_FILNAVN" --repo "$GITHUB_REPOSITORY" --ref "$default_branch"
