@@ -53,7 +53,7 @@ jobs:
          
           # Unngå at argumentet vi skal sende til Dockerfile blir ignorert, f.eks. fordi Dockerfile hardkoder baseimage,
           # som vil føre til at vi lagrer en annen digest enn den som ble deployet
-          runtime_from=$(awk 'toupper($1) == "FROM" { image = $2 } END { print image }' Dockerfile)
+          runtime_from=$(awk 'toupper($1) == "FROM" { image = $2 ~ /^--platform=/ ? $3 : $2 } END { print image }' Dockerfile)
           if [[ "$runtime_from" != '$BASE_IMAGE_DIGEST_PINNED_REF' && "$runtime_from" != '${BASE_IMAGE_DIGEST_PINNED_REF}' ]]; then
             echo "::error::Siste FROM i Dockerfile må bruke BASE_IMAGE_DIGEST_PINNED_REF som build-argument"
             exit 1
