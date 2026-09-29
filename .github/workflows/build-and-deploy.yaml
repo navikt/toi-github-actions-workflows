@@ -27,12 +27,19 @@ jobs:
     uses: navikt/toi-github-actions-workflows/.github/workflows/deploy.yaml@autobump-docker-baseimage # zizmor: ignore[ref-confusion,unpinned-uses]
     with:
       image: ${{ needs.call-build-java-gradlew.outputs.image }}
-      baseimage-tagged-ref: ${{ needs.call-build-java-gradlew.outputs.baseimage-tagged-ref }}
-      baseimage-digest: ${{ needs.call-build-java-gradlew.outputs.baseimage-digest }}
       deploy-to-dev-if-branch-name-is: ${{ inputs.deploy-to-dev-if-branch-name-is }}
     permissions:
       contents: read
       id-token: write
+
+  call-lagre-docker-baseimage-digest:
+    needs: [call-build-java-gradlew, call-deploy]
+    if: needs.call-deploy.outputs.deploy-to-prod-was-successful == 'true'
+    uses: navikt/toi-github-actions-workflows/.github/workflows/lagre-docker-baseimage-digest.yaml@autobump-docker-baseimage # zizmor: ignore[ref-confusion,unpinned-uses]
+    with:
+      baseimage-tagged-ref: ${{ needs.call-build-java-gradlew.outputs.baseimage-tagged-ref }}
+      baseimage-digest: ${{ needs.call-build-java-gradlew.outputs.baseimage-digest }}
+    permissions: { }
 
   call-trivy-security-scan:
     needs: call-build-java-gradlew

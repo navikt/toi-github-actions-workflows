@@ -5,17 +5,13 @@ on:
         required: true
         type: string
         description: "Canonical reference to the built application image"
-      baseimage-tagged-ref:
-        required: true
-        type: string
-        description: "Full tagged reference to the runtime base image (registry/path:tag)"
-      baseimage-digest:
-        required: true
-        type: string
-        description: "SHA-256 digest of the runtime base image used in the build"
       deploy-to-dev-if-branch-name-is:
         required: false
         type: string
+    outputs:
+      deployed-to-prod:
+        description: Whether the production deployment completed successfully
+        value: ${{ jobs.deploy-to-prod.outputs.deploy-to-prod-was-successful }}
 
 jobs:
   deploy-to-dev:
@@ -46,6 +42,8 @@ jobs:
       contents: read
       id-token: write
     timeout-minutes: 15
+    outputs:
+      deploy-to-prod-was-successful: ${{ steps.mark-deployed.outputs.deploy-to-prod-was-successful }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -56,11 +54,6 @@ jobs:
           RESOURCE: nais/nais.yaml,nais/alerts.yaml
           VAR: image=${{ inputs.image }}
           VARS: nais/prod-gcp.json
-
-  call-lagre-docker-baseimage-digest:
-    needs: deploy-to-prod
-    uses: navikt/toi-github-actions-workflows/.github/workflows/lagre-docker-baseimage-digest.yaml@autobump-docker-baseimage # zizmor: ignore[ref-confusion,unpinned-uses]
-    with:
-      baseimage-tagged-ref: ${{ inputs.baseimage-tagged-ref }}
-      baseimage-digest: ${{ inputs.baseimage-digest }}
-    permissions: { }
+      - name: Mark production deployment as successful
+        id: mark-deployed
+        run: echo "deploy-to-prod-was-successful=true" >> "$GITHUB_OUTPUT"
