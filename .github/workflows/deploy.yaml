@@ -9,7 +9,7 @@ on:
         required: false
         type: string
     outputs:
-      deployed-to-prod:
+      deploy-to-prod-was-successful:
         description: Whether the production deployment completed successfully
         value: ${{ jobs.deploy-to-prod.outputs.deploy-to-prod-was-successful }}
 
