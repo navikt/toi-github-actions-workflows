@@ -37,7 +37,7 @@ jobs:
     if: needs.call-deploy.outputs.deploy-to-prod-was-successful == 'true'
     uses: navikt/toi-github-actions-workflows/.github/workflows/lagre-docker-baseimage-digest.yaml@autobump-docker-baseimage # zizmor: ignore[ref-confusion,unpinned-uses]
     with:
-      baseimage-tagged-ref: ${{ needs.call-build-java-gradlew.outputs.baseimage-tagged-ref }}
+      baseimage-tagged-ref: ${{ inputs.baseimage-tagged-ref }}
       baseimage-digest: ${{ needs.call-build-java-gradlew.outputs.baseimage-digest }}
     permissions: { }
 

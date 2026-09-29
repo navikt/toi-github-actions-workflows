@@ -13,9 +13,6 @@ on:
       image:
         description: "Canonical reference to the built application image"
         value: ${{ jobs.build-and-publish.outputs.image }}
-      baseimage-tagged-ref:
-        description: "Full tagged reference to the runtime base image"
-        value: ${{ jobs.build-and-publish.outputs.baseimage-tagged-ref }}
       baseimage-digest:
         description: "Digest used to build the runtime base image"
         value: ${{ jobs.build-and-publish.outputs.baseimage-digest }}
@@ -29,7 +26,6 @@ jobs:
     timeout-minutes: 30
     outputs:
       image: ${{ steps.docker.outputs.image }}
-      baseimage-tagged-ref: ${{ inputs.baseimage-tagged-ref }}
       baseimage-digest: ${{ steps.baseimage.outputs.baseimage-digest }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
