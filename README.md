@@ -5,7 +5,7 @@ Hva er det? Se https://docs.github.com/en/actions/sharing-automations/reusing-wo
 ## Automatisk oppdatering av Docker run-time base-image
 
 ### Hvorfor
-Det oppdages stadig nye sikkerhetssissues i Docker "base image"-ene vi bruker. Image-ene patches fortløpende av leverandøren. De patchede versjonene publiseres med samme tag. Hver gang vi bygger henter vi ned nyeste versjon av image-et med den tag-en vi referer til til. Det betyr at hver gang vi bygger og deployer til prod så så får vi sannsnynligvis lukket noen sikkerhetsissues. Vi ønsker å slippe å gjøre dette manuelt. Derfor bruker vi en scheduled workflow som regelmessig sjekker om det foreligger en ny versjon, og i så fall bygger og deployer til prod.
+Det oppdages stadig nye sikkerhetssissues i Docker "base image"-ene vi bruker. Image-ene patches fortløpende av leverandøren. De patchede versjonene publiseres med samme tag. Hver gang vi bygger henter vi ned nyeste versjon av image-et med den tag-en vi referer til. Det betyr at hver gang vi bygger og deployer til prod så får vi sannsnynligvis lukket noen sikkerhetsissues. Det vil være bra for sikkerheten å gjøre dette ofte, f.eks. daglig,  men vi ønsker å slippe å gjøre det manuelt. Derfor bruker vi en scheduled workflow, som regelmessig sjekker om det foreligger en ny versjon, og i så fall bygger og deployer til prod.
 
 ### Hvordan
 
@@ -30,9 +30,8 @@ ARG BASE_IMAGE_DIGEST_PINNED_REF
 FROM ${BASE_IMAGE_DIGEST_PINNED_REF}
 ```
 
+Har forsøkt å bruke Docker sin terminologi i navngivingen av parametre: 
 `baseimage-tagged-ref` er hele `registry/path:tag`, `baseimage-digest` er `sha256:...`, og `BASE_IMAGE_DIGEST_PINNED_REF` er `registry/path:tag@sha256:...`.
-
-Byggeworkflow-en starter med å slå opp baseimage digest-en i GAR (Github Artifact Registry), for å sikre at det er den samme digest-en som blir sendt til Dockerfile som vi bruker til sammenligning senere.
 
 
 # Versjonering
