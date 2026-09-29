@@ -14,7 +14,7 @@ on:
         type: string
 jobs:
   call-build-java-gradlew:
-    uses: navikt/toi-github-actions-workflows/.github/workflows/build-java-gradlew.yaml@autobump-docker-baseimage # zizmor: ignore[ref-confusion,unpinned-uses]
+    uses: navikt/toi-github-actions-workflows/.github/workflows/build-java-gradlew.yaml@v16 # zizmor: ignore[ref-confusion,unpinned-uses]
     with:
       java-version: ${{ inputs.java-version }}
       baseimage-tagged-ref: ${{ inputs.baseimage-tagged-ref }}
@@ -24,7 +24,7 @@ jobs:
 
   call-deploy:
     needs: call-build-java-gradlew
-    uses: navikt/toi-github-actions-workflows/.github/workflows/deploy.yaml@autobump-docker-baseimage # zizmor: ignore[ref-confusion,unpinned-uses]
+    uses: navikt/toi-github-actions-workflows/.github/workflows/deploy.yaml@v16 # zizmor: ignore[ref-confusion,unpinned-uses]
     with:
       image: ${{ needs.call-build-java-gradlew.outputs.image }}
       deploy-to-dev-if-branch-name-is: ${{ inputs.deploy-to-dev-if-branch-name-is }}
@@ -35,7 +35,7 @@ jobs:
   call-lagre-docker-baseimage-digest:
     needs: [call-build-java-gradlew, call-deploy]
     if: needs.call-deploy.outputs.deploy-to-prod-was-successful == 'true'
-    uses: navikt/toi-github-actions-workflows/.github/workflows/lagre-docker-baseimage-digest.yaml@autobump-docker-baseimage # zizmor: ignore[ref-confusion,unpinned-uses]
+    uses: navikt/toi-github-actions-workflows/.github/workflows/lagre-docker-baseimage-digest.yaml@v16 # zizmor: ignore[ref-confusion,unpinned-uses]
     with:
       baseimage-tagged-ref: ${{ inputs.baseimage-tagged-ref }}
       baseimage-digest: ${{ needs.call-build-java-gradlew.outputs.baseimage-digest }}
@@ -43,7 +43,7 @@ jobs:
 
   call-trivy-security-scan:
     needs: call-build-java-gradlew
-    uses: navikt/toi-github-actions-workflows/.github/workflows/trivy-security-scan.yaml@v15 # zizmor: ignore[ref-confusion,unpinned-uses]
+    uses: navikt/toi-github-actions-workflows/.github/workflows/trivy-security-scan.yaml@v16 # zizmor: ignore[ref-confusion,unpinned-uses]
     with:
       image: ${{ needs.call-build-java-gradlew.outputs.image }}
     permissions:

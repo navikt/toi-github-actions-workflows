@@ -8,6 +8,7 @@ on:
 
 jobs:
   sammenlign-docker-baseimage-versjoner:
+    name: Sammenlign Docker base-image versjoner
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -18,7 +19,7 @@ jobs:
 
     steps:
       # Workflow-en "lagre-docker-baseimage-digest" skal ha lagret baseimage-tagged-ref.txt og baseimage-digest.txt etter vellykket deploy til prod
-      - name: Hent sist deployede runtime baseimage digest
+      - name: Hent sist deployede run-time base-image digest
         id: siste-deploy
         env:
           GH_TOKEN: ${{ github.token }}

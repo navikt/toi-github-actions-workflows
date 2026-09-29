@@ -14,7 +14,7 @@ on:
 
 jobs:
   lagre:
-    name: Lagre Docker baseimage digest
+    name: Lagre Docker run-time base-image digest
     runs-on: ubuntu-latest
     permissions: {}
     timeout-minutes: 10
