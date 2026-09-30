@@ -50,7 +50,7 @@ jobs:
           BASEIMAGE_TAGGED_REF: ${{ inputs.baseimage-tagged-ref }}
         run: |
           set -euo pipefail
-         
+          
           # Unngå at argumentet vi skal sende til Dockerfile blir ignorert, f.eks. fordi Dockerfile hardkoder baseimage,
           # som vil føre til at vi lagrer en annen digest enn den som ble deployet
           runtime_from=$(awk 'toupper($1) == "FROM" { image = $2 ~ /^--platform=/ ? $3 : $2 } END { print image }' Dockerfile)
@@ -64,9 +64,9 @@ jobs:
             exit 1
           fi
 
-          baseimage_digest=$(docker buildx imagetools inspect "$BASEIMAGE_TAGGED_REF" --format '{{json .Manifest}}' | jq -er '.digest')
-          if [[ ! "$baseimage_digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-            echo "::error::Fant ingen gyldig SHA-256-digest for runtime-baseimaget"
+          baseimage_digest=$( docker buildx imagetools inspect "$BASEIMAGE_TAGGED_REF" | awk '$1 == "Digest:" && !found { print $2; found = 1 }' )
+          if [[ -z "$baseimage_digest" || ! "$baseimage_digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::Fant ingen gyldig SHA-256-digest for runtime-baseimaget: $BASEIMAGE_TAGGED_REF" >&2
             exit 1
           fi
           
