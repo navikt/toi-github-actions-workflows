@@ -11,6 +11,10 @@ on:
         required: true
         type: string
         description: Docker baseimage digest
+      app-navn:
+        required: false
+        type: string
+        description: App name used to keep artifacts separate in a monorepo
 
 jobs:
   lagre:
@@ -24,11 +28,17 @@ jobs:
         env:
           BASEIMAGE_TAGGED_REF: ${{ inputs.baseimage-tagged-ref }}
           BASEIMAGE_DIGEST: ${{ inputs.baseimage-digest }}
+          APP_NAVN: ${{ inputs.app-navn }}
         run: |
           set -euo pipefail
           
           if [[ -z "$BASEIMAGE_TAGGED_REF" || "$BASEIMAGE_TAGGED_REF" == *$'\n'* || "$BASEIMAGE_TAGGED_REF" == *$'\r'* || ! "$BASEIMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
             echo "::error::Ugyldig baseimage-tagged-ref eller baseimage-digest"
+            exit 1
+          fi
+          
+          if [[ -n "$APP_NAVN" && ! "$APP_NAVN" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            echo "::error::Ugyldig app-navn"
             exit 1
           fi
           
@@ -38,7 +48,7 @@ jobs:
       - name: Last opp
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: baseimage-digest
+          name: baseimage-digest${{ inputs.app-navn != '' && format('-{0}', inputs.app-navn) || '' }}
           path: |
             baseimage-tagged-ref.txt
             baseimage-digest.txt
