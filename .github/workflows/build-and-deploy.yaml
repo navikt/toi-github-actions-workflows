@@ -12,6 +12,10 @@ on:
       deploy-to-dev-if-branch-name-is:
         required: false
         type: string
+      app-navn:
+        required: false
+        type: string
+        description: App name used to keep artifacts separate in a monorepo
 jobs:
   call-build-java-gradlew:
     uses: navikt/toi-github-actions-workflows/.github/workflows/build-java-gradlew.yaml@v16 # zizmor: ignore[ref-confusion,unpinned-uses]
@@ -39,4 +43,5 @@ jobs:
     with:
       baseimage-tagged-ref: ${{ inputs.baseimage-tagged-ref }}
       baseimage-digest: ${{ needs.call-build-java-gradlew.outputs.baseimage-digest }}
+      app-navn: ${{ inputs.app-navn }}
     permissions: { }
