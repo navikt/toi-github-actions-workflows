@@ -5,6 +5,10 @@ on:
         required: true
         type: string
         description: 'Filnavnet til appens deploy-workflow'
+      app-navn:
+        required: false
+        type: string
+        description: App name used to find an app's artifact in a repo with multiple apps (monorepo)
 
 jobs:
   sammenlign-docker-baseimage-versjoner:
@@ -23,10 +27,17 @@ jobs:
         id: siste-deploy
         env:
           GH_TOKEN: ${{ github.token }}
+          APP_NAVN: ${{ inputs.app-navn }}
         run: |
           set -euo pipefail
+
+          if [[ -n "$APP_NAVN" && ! "$APP_NAVN" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            echo "::error::Ugyldig app-navn"
+            exit 1
+          fi
           
-          artifact_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=baseimage-digest&per_page=100" --jq '[.artifacts[] | select(.expired == false)] | first | .id // empty')
+          artifact_name="baseimage-digest${APP_NAVN:+-$APP_NAVN}"
+          artifact_id=$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$artifact_name&per_page=100" --jq "[.[].artifacts[] | select(.expired == false and .name == \"$artifact_name\")] | max_by([.created_at, .id]) | .id // empty")
           if [ -z "$artifact_id" ]; then
             echo "found=false" >> "$GITHUB_OUTPUT"
             exit 0

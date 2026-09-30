@@ -53,6 +53,12 @@ I appen, legg til en scheduled workflow, for eksempel `.github/workflows/oppdate
  ```
 I eksemplet ovenfor er `deploy.yaml` filnavnet på appens deploy-workflow, altså den som kaller `toi-github-actions-workflows/.github/workflows/build-and-deploy.yaml`. Appens deploy-workflow må ha `workflow_dispatch` under `on:` for at din nye scheduled workflow skal kunne starte deploy-workflowen.
 
+#### Flere apper i ett repo
+
+Når flere apper deler repo trenger vi app-unike navn på artefaktene som inneholder digest. Løses ved at hver app sender 
+navnet sitt som parameter til både `lagre-docker-baseimage-digest.yaml` og `oppdater-docker-baseimage.yaml`. 
+Artefaktet heter da `baseimage-digest-<app-navn>`. 
+
 
 
 # Versjonering
