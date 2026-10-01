@@ -37,7 +37,7 @@ jobs:
           fi
           
           artifact_name="baseimage-digest${APP_NAVN:+-$APP_NAVN}"
-          artifact_id=$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$artifact_name&per_page=100" --jq "[.[].artifacts[] | select(.expired == false and .name == \"$artifact_name\")] | max_by([.created_at, .id]) | .id // empty")
+          artifact_id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$artifact_name&per_page=100" | jq -sr --arg artifact_name "$artifact_name" '[.[] | .artifacts[] | select(.expired == false and .name == $artifact_name)] | if length == 0 then "" else max_by([.created_at, .id]).id end')
           if [ -z "$artifact_id" ]; then
             echo "found=false" >> "$GITHUB_OUTPUT"
             exit 0
