@@ -19,7 +19,7 @@ Hvilket Docker run-time base-image som skal brukes oppgis i appens workflow, i `
 ```yaml
 jobs:
   build-and-deploy:
-    uses: navikt/toi-github-actions-workflows/.github/workflows/build-and-deploy.yaml@v16
+    uses: navikt/toi-github-actions-workflows/.github/workflows/build-and-deploy.yaml@v17
     with:
       java-version: '25'
       baseimage-tagged-ref: europe-north1-docker.pkg.dev/cgr-nav/pull-through/nav.no/jre:openjdk-25
@@ -44,7 +44,7 @@ I appen, legg til en scheduled workflow, for eksempel `.github/workflows/oppdate
 
  jobs:
    call-oppdater-docker-baseimage:
-     uses: navikt/toi-github-actions-workflows/.github/workflows/oppdater-docker-baseimage.yaml@v16
+     uses: navikt/toi-github-actions-workflows/.github/workflows/oppdater-docker-baseimage.yaml@v17
      with:
        deploy-workflow-filnavn: deploy.yml
      permissions:
@@ -113,8 +113,8 @@ git pull
 ### 3-A: Non-breaking change
 Flytt eksisterende tag til nyeste commit:
 ```bash
-git tag -fa v16 -m "v16 non-breaking change" 
-git push origin refs/tags/v16 --force
+git tag -fa v17 -m "v17 non-breaking change" 
+git push origin refs/tags/v17 --force
 ```
 Du er ferdig. Endringen vil bli tatt i bruk alle steder som allerede referer til denne versjonen, uten at du trenger å endre noe på bruksstedet.
 
@@ -122,8 +122,8 @@ Du er ferdig. Endringen vil bli tatt i bruk alle steder som allerede referer til
 1. Opprett ny tag med det nye versjonsnummeret:
 
 ```bash
-git tag -a v17 -m "v17 breaking change"
-git push origin refs/tags/v17
+git tag -a v18 -m "v18 breaking change"
+git push origin refs/tags/v18
 ```
 
 2. Oppdater workflows i appene til å bruke det nye versjonsnumeret.
