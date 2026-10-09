@@ -113,7 +113,9 @@ git pull
 ### 3-A: Non-breaking change
 Flytt eksisterende tag til nyeste commit:
 ```bash
-git tag -fa v17 -m "v17 non-breaking change" 
+git tag -fa v17 -m "v17 non-breaking change"
+```
+```bash
 git push origin refs/tags/v17 --force
 ```
 Du er ferdig. Endringen vil bli tatt i bruk alle steder som allerede referer til denne versjonen, uten at du trenger å endre noe på bruksstedet.
@@ -123,6 +125,8 @@ Du er ferdig. Endringen vil bli tatt i bruk alle steder som allerede referer til
 
 ```bash
 git tag -a v18 -m "v18 breaking change"
+```
+```bash
 git push origin refs/tags/v18
 ```
 
