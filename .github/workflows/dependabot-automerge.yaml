@@ -30,11 +30,61 @@ jobs:
         with:
           github-token: ${{ github.token }}
 
+      # update-type fra fetch-metadata er den høyeste typen den kjenner igjen. En avhengighet med
+      # ukjent type blir da oversett. Vi krever derfor at hver oppdatering er patch eller minor.
+      - name: Sjekk at alle oppdateringene er patch eller minor
+        id: klassifisering
+        env:
+          OPPDATERINGER: ${{ steps.metadata.outputs.updated-dependencies-json }}
+        run: |
+          set -euo pipefail
+          automerge=$(jq -r '
+            if type == "array" and length > 0
+              and all(.[]; .updateType == "version-update:semver-patch" or .updateType == "version-update:semver-minor")
+            then "true"
+            else "false"
+            end' <<< "$OPPDATERINGER")
+          if [[ "$automerge" != "true" ]]; then
+            automerge=false
+            echo "::notice::PR-en inneholder oppdateringer som ikke er patch eller minor. Merge den manuelt."
+            jq -r '.[] | "\(.dependencyName): \(.updateType)"' <<< "$OPPDATERINGER" || true
+          fi
+          echo "automerge=$automerge" >> "$GITHUB_OUTPUT"
+
+      # Feil i input skal stoppe før merge, ellers blir PR-en merget uten at noe deployes
+      - name: Valider deploy-workflows
+        id: deploy-workflows
+        if: steps.klassifisering.outputs.automerge == 'true' && inputs.deploy-workflow-filnavn != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          DEPLOY_WORKFLOW_FILNAVN: ${{ inputs.deploy-workflow-filnavn }}
+        run: |
+          set -euo pipefail
+          # read -d '' returnerer 1 ved slutten av input
+          read -r -d '' -a filnavn_liste <<< "$DEPLOY_WORKFLOW_FILNAVN" || true
+          for filnavn in "${filnavn_liste[@]}"; do
+            if [[ ! "$filnavn" =~ ^[A-Za-z0-9._-]+\.ya?ml$ ]]; then
+              echo "::error::Ugyldig filnavn i deploy-workflow-filnavn: $filnavn"
+              exit 1
+            fi
+            if ! state=$(gh api "repos/$REPO/actions/workflows/$filnavn" --jq '.state' 2>/dev/null); then
+              echo "::error::Fant ikke workflowen $filnavn i $REPO"
+              exit 1
+            fi
+            if [[ "$state" != "active" ]]; then
+              echo "::error::Workflowen $filnavn er ikke aktiv (state: $state)"
+              exit 1
+            fi
+          done
+          # Navnene er validert over og inneholder verken mellomrom eller glob-tegn
+          echo "filnavn=${filnavn_liste[*]}" >> "$GITHUB_OUTPUT"
+
       # fetch-metadata sjekker og klassifiserer bare første commit, og forfatteren kan forfalskes.
       # Vi krever derfor nøyaktig én commit: den som ble bygget, skrevet av Dependabot og signert
       # av GitHub (committer web-flow og verified).
       - name: Sjekk at PR-en er én signert Dependabot-commit
-        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        if: steps.klassifisering.outputs.automerge == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -58,32 +108,44 @@ jobs:
       # Major-oppdateringer må merges manuelt
       - name: Merge patch- og minor-oppdateringer
         id: merge
-        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        if: steps.klassifisering.outputs.automerge == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: gh pr merge --squash --match-head-commit "$HEAD_SHA" "$PR_URL"
+        run: |
+          set -euo pipefail
+          gh pr merge --squash --match-head-commit "$HEAD_SHA" "$PR_URL"
+          # Med merge queue legger gh pr merge bare PR-en i kø. Da er den ikke merget ennå.
+          state=$(gh pr view "$PR_URL" --json state --jq '.state')
+          if [[ "$state" != "MERGED" ]]; then
+            echo "::warning::PR-en er ikke merget ennå (state: $state), f.eks. fordi den ligger i merge queue. Deploy startes ikke herfra."
+            echo "merget=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "merget=true" >> "$GITHUB_OUTPUT"
 
       # Merge gjort med GITHUB_TOKEN utløser ikke on: push, så deploy må startes eksplisitt
       - name: Start deploy
-        if: steps.merge.outcome == 'success' && inputs.deploy-workflow-filnavn != ''
+        if: steps.merge.outputs.merget == 'true' && steps.deploy-workflows.outputs.filnavn != ''
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           BASE_REF: ${{ github.event.pull_request.base.ref }}
-          DEPLOY_WORKFLOW_FILNAVN: ${{ inputs.deploy-workflow-filnavn }}
+          FILNAVN: ${{ steps.deploy-workflows.outputs.filnavn }}
         run: |
           set -euo pipefail
-          # read -d '' returnerer 1 ved slutten av input
-          read -r -d '' -a filnavn_liste <<< "$DEPLOY_WORKFLOW_FILNAVN" || true
-          for filnavn in "${filnavn_liste[@]}"; do
-            if [[ ! "$filnavn" =~ ^[A-Za-z0-9._-]+\.ya?ml$ ]]; then
-              echo "::error::Ugyldig filnavn i deploy-workflow-filnavn: $filnavn"
-              exit 1
-            fi
-          done
+          read -ra filnavn_liste <<< "$FILNAVN"
+          # Start alle, selv om én feiler, så ikke resten av appene blir stående uten deploy
+          feilet=()
           for filnavn in "${filnavn_liste[@]}"; do
             echo "Starter $filnavn på $BASE_REF"
-            gh workflow run "$filnavn" --ref "$BASE_REF" --repo "$REPO"
+            if ! gh workflow run "$filnavn" --ref "$BASE_REF" --repo "$REPO"; then
+              echo "::error::Klarte ikke å starte $filnavn"
+              feilet+=("$filnavn")
+            fi
           done
+          if (( ${#feilet[@]} > 0 )); then
+            echo "::error::PR-en er merget, men disse deploy-workflowene må startes manuelt: ${feilet[*]}"
+            exit 1
+          fi

@@ -63,7 +63,9 @@ Artefaktet heter da `baseimage-digest-<app-navn>`.
 
 Dependabot lager PR-er med nye versjoner av avhengigheter. Patch- og minor-oppdateringer merges automatisk når bygget er grønt, og så starter deploy. Major-oppdateringer merger du manuelt.
 
-Automerge kjører bare når PR-en er laget av Dependabot og har nøyaktig én commit, signert av GitHub. Har noen pushet en fiks til PR-en, må den merges manuelt.
+Automerge kjører bare når PR-en er laget av Dependabot og har nøyaktig én commit, signert av GitHub. Har noen pushet en fiks til PR-en, må den merges manuelt. Alle oppdateringene i PR-en må være patch eller minor. Kan automerge ikke avgjøre typen for én av dem, må PR-en merges manuelt.
+
+Bruker repoet merge queue, legger automerge PR-en i køen og starter ikke deploy selv.
 
 To felles workflows:
 * `dependabot-automerge-gradle.yaml` bygger PR-en med `./gradlew build` og merger. Bruk denne i Gradle-apper.
@@ -71,7 +73,7 @@ To felles workflows:
 
 ### Gradle-app
 
-1. Kopier [maler/dependabot-gradle.yml](maler/dependabot-gradle.yml) til `.github/dependabot.yml` i appen. Dependabot kan ikke hente konfigurasjon fra et annet repo, så filen må ligge i hvert repo. Fjern `registries` hvis appen ikke henter pakker fra Nav-speilet.
+1. Kopier [maler/dependabot-gradle.yml](maler/dependabot-gradle.yml) til `.github/dependabot.yml` i appen. Dependabot kan ikke hente konfigurasjon fra et annet repo, så filen må ligge i hvert repo. Fjern `registries` hvis appen ikke henter pakker fra Nav-speilet. Har appen allerede en `dependabot.yml`, sammenlign med malen og behold appens egne `ignore`-regler.
 2. Legg til `.github/workflows/dependabot-automerge.yaml`:
 ```yaml
 name: Dependabot automerge
@@ -96,11 +98,13 @@ jobs:
       pull-requests: write
       actions: write
 ```
-En merge gjort med `GITHUB_TOKEN` utløser ikke `on: push`. Automerge starter derfor deploy-workflowen selv, og den må ha `workflow_dispatch` under `on:`. Utelat `deploy-workflow-filnavn` hvis appen ikke skal deployes etter merge.
+En merge gjort med `GITHUB_TOKEN` utløser ikke `on: push`. Automerge starter derfor deploy-workflowen selv, og den må ha `workflow_dispatch` under `on:`. Automerge sjekker før merge at hver deploy-workflow finnes og er aktiv. Utelat `deploy-workflow-filnavn` hvis appen ikke skal deployes etter merge.
 
 ### Flere apper i ett Gradle-repo (monorepo)
 
-Når `settings.gradle.kts` i roten inkluderer alle appene, holder det med én `dependabot.yml` med `directory: "/"`. Den dekker alle subprosjekter og `buildSrc`. Automerge bygger hele repoet.
+Når `settings.gradle.kts` i roten inkluderer alle appene, holder det med én `dependabot.yml` med `directory: "/"`. Den dekker alle subprosjekter og `buildSrc/build.gradle.kts`. Automerge bygger hele repoet.
+
+Dependabot oppdaterer ikke versjoner i convention plugins, f.eks. `buildSrc/src/main/kotlin/toi.common.gradle.kts`. Den leser bare avhengigheter fra `build.gradle.kts`, `settings.gradle.kts` og version catalog (`gradle/libs.versions.toml`). Skal Dependabot vedlikeholde versjonene, må de flyttes til en av disse.
 
 List deploy-workflowen til hver app i `deploy-workflow-filnavn`, én per linje:
 ```yaml
@@ -110,7 +114,7 @@ List deploy-workflowen til hver app i `deploy-workflow-filnavn`, én per linje:
         deploy-app-a.yaml
         deploy-app-b.yaml
 ```
-Alle appene deployes etter hver merge. En endring i `buildSrc` eller et felles bibliotek kan treffe alle appene, så vi deployer heller én gang for mye enn å la en app stå på gamle versjoner.
+Alle appene deployes etter hver merge. En endring i `buildSrc` eller et felles bibliotek kan treffe alle appene, så vi deployer heller én gang for mye enn å la en app stå på gamle versjoner. Klarer automerge ikke å starte én av dem, starter den likevel resten og feiler til slutt med navnet på den som må startes manuelt.
 
 ### Andre byggeverktøy, for eksempel frontend
 

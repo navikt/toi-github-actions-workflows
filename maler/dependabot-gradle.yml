@@ -9,7 +9,8 @@ registries:
     url: https://github-package-registry-mirror.gc.nav.no/cached/maven-release
 updates:
   - package-ecosystem: "gradle"
-    # Rot-bygget dekker alle subprosjekter, også buildSrc og apper i et monorepo
+    # Rot-bygget dekker alle subprosjekter i settings.gradle.kts og buildSrc/build.gradle.kts.
+    # Versjoner i convention plugins (buildSrc/src/main/kotlin/*.gradle.kts) oppdateres ikke.
     directory: "/"
     registries:
       - nav-speil
@@ -22,6 +23,10 @@ updates:
       exclude:
         - "no.nav*"
     open-pull-requests-limit: 10
+    ignore:
+      # Følger agentversjonen til Nais, se https://doc.nais.io/observability/reference/auto-config/#agent-versions
+      # Regelen gjør ingenting i apper som ikke har avhengigheten.
+      - dependency-name: "io.opentelemetry.instrumentation:opentelemetry-logback-mdc-1.0"
     labels:
       - "dependencies"
       - "gradle"
