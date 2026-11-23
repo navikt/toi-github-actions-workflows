@@ -58,6 +58,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
           DEPLOY_WORKFLOW_FILNAVN: ${{ inputs.deploy-workflow-filnavn }}
         run: |
           set -euo pipefail
@@ -74,6 +75,17 @@ jobs:
             fi
             if [[ "$state" != "active" ]]; then
               echo "::error::Workflowen $filnavn er ikke aktiv (state: $state)"
+              exit 1
+            fi
+            # gh workflow run krever workflow_dispatch i versjonen av fila på branchen det deployes fra.
+            # on: kan være en streng, en liste eller et map.
+            if ! gh api -H "Accept: application/vnd.github.raw+json" \
+                "repos/$REPO/contents/.github/workflows/$filnavn?ref=$BASE_REF" \
+              | yq -o=json '.on' \
+              | jq -e 'if type == "object" then has("workflow_dispatch")
+                       elif type == "array" then index("workflow_dispatch") != null
+                       else . == "workflow_dispatch" end' > /dev/null; then
+              echo "::error::Workflowen $filnavn mangler workflow_dispatch under on: på $BASE_REF, eller fila kunne ikke leses"
               exit 1
             fi
           done
@@ -116,10 +128,10 @@ jobs:
         run: |
           set -euo pipefail
           gh pr merge --squash --match-head-commit "$HEAD_SHA" "$PR_URL"
-          # Med merge queue legger gh pr merge bare PR-en i kø. Da er den ikke merget ennå.
+          # Merge queue støttes ikke, men skulle gh pr merge bare legge PR-en i kø, er den ikke merget ennå.
           state=$(gh pr view "$PR_URL" --json state --jq '.state')
           if [[ "$state" != "MERGED" ]]; then
-            echo "::warning::PR-en er ikke merget ennå (state: $state), f.eks. fordi den ligger i merge queue. Deploy startes ikke herfra."
+            echo "::warning::PR-en er ikke merget (state: $state). Deploy startes ikke."
             echo "merget=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi

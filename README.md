@@ -65,7 +65,9 @@ Dependabot lager PR-er med nye versjoner av avhengigheter. Patch- og minor-oppda
 
 Automerge kjører bare når PR-en er laget av Dependabot og har nøyaktig én commit, signert av GitHub. Har noen pushet en fiks til PR-en, må den merges manuelt. Alle oppdateringene i PR-en må være patch eller minor. Kan automerge ikke avgjøre typen for én av dem, må PR-en merges manuelt.
 
-Bruker repoet merge queue, legger automerge PR-en i køen og starter ikke deploy selv.
+Merge queue støttes ikke. `GITHUB_TOKEN` kan ikke legge PR-er i køen, og med et annet token ville merge utløse `on: push` og dermed dobbel deploy.
+
+Automerge sjekker at det er samme commit som ble bygget, men ikke at `main` er uendret siden bygget. Merges to Dependabot-PR-er rett etter hverandre, kan kombinasjonen være utestet. Deploy-workflowen bygger og tester `main` på nytt før den lager imaget, så en feilende kombinasjon stopper der og blir ikke deployet.
 
 To felles workflows:
 * `dependabot-automerge-gradle.yaml` bygger PR-en med `./gradlew build` og merger. Bruk denne i Gradle-apper.
@@ -98,7 +100,14 @@ jobs:
       pull-requests: write
       actions: write
 ```
-En merge gjort med `GITHUB_TOKEN` utløser ikke `on: push`. Automerge starter derfor deploy-workflowen selv, og den må ha `workflow_dispatch` under `on:`. Automerge sjekker før merge at hver deploy-workflow finnes og er aktiv. Utelat `deploy-workflow-filnavn` hvis appen ikke skal deployes etter merge.
+En merge gjort med `GITHUB_TOKEN` utløser ikke `on: push`. Automerge starter derfor deploy-workflowen selv, og den må ha `workflow_dispatch` under `on:`. Automerge sjekker før merge at hver deploy-workflow finnes, er aktiv og har `workflow_dispatch`. Utelat `deploy-workflow-filnavn` hvis appen ikke skal deployes etter merge.
+
+Deploy-workflowen bør ha `concurrency` som kjører deployene i rekkefølge. Uten den kan en deploy av en eldre commit bli ferdig sist og rulle ut et eldre image:
+```yaml
+concurrency:
+  group: deploy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+```
 
 ### Flere apper i ett Gradle-repo (monorepo)
 
