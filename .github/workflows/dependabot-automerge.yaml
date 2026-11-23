@@ -1,0 +1,89 @@
+# Merger Dependabot-PR-er med patch- og minor-oppdateringer og starter deploy.
+# Uavhengig av språk og byggeverktøy. Bygger ikke selv: kalleren må bygge og teste PR-en
+# i en jobb som kallet hit avhenger av (needs). Gradle-apper kan bruke dependabot-automerge-gradle.yaml.
+on:
+  workflow_call:
+    inputs:
+      deploy-workflow-filnavn:
+        required: false
+        type: string
+        default: ''
+        description: "Deploy-workflows som startes etter merge, adskilt med mellomrom eller linjeskift. Tom gir ingen deploy."
+
+jobs:
+  automerge:
+    # Har noen pushet en fiks til PR-en, merges den manuelt. Da hoppes automerge over i stedet for å feile.
+    if: >-
+      github.event_name == 'pull_request'
+      && github.event.pull_request.user.login == 'dependabot[bot]'
+      && github.event.pull_request.commits == 1
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    timeout-minutes: 10
+    steps:
+      - name: Hent metadata fra Dependabot
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ github.token }}
+
+      # fetch-metadata sjekker og klassifiserer bare første commit, og forfatteren kan forfalskes.
+      # Vi krever derfor nøyaktig én commit: den som ble bygget, skrevet av Dependabot og signert
+      # av GitHub (committer web-flow og verified).
+      - name: Sjekk at PR-en er én signert Dependabot-commit
+        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          commit=$(gh api "repos/$REPO/pulls/$PR_NUMBER/commits?per_page=2" --jq '
+            if length == 1
+              and .[0].author.login == "dependabot[bot]"
+              and .[0].committer.login == "web-flow"
+              and .[0].commit.verification.verified == true
+            then .[0].sha
+            else "ugyldig"
+            end')
+          if [[ "$commit" != "$HEAD_SHA" ]]; then
+            echo "::error::Automerge krever at PR-en bare har den signerte Dependabot-commiten $HEAD_SHA. Merge PR-en manuelt."
+            exit 1
+          fi
+
+      # Major-oppdateringer må merges manuelt
+      - name: Merge patch- og minor-oppdateringer
+        id: merge
+        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: gh pr merge --squash --match-head-commit "$HEAD_SHA" "$PR_URL"
+
+      # Merge gjort med GITHUB_TOKEN utløser ikke on: push, så deploy må startes eksplisitt
+      - name: Start deploy
+        if: steps.merge.outcome == 'success' && inputs.deploy-workflow-filnavn != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          DEPLOY_WORKFLOW_FILNAVN: ${{ inputs.deploy-workflow-filnavn }}
+        run: |
+          set -euo pipefail
+          # read -d '' returnerer 1 ved slutten av input
+          read -r -d '' -a filnavn_liste <<< "$DEPLOY_WORKFLOW_FILNAVN" || true
+          for filnavn in "${filnavn_liste[@]}"; do
+            if [[ ! "$filnavn" =~ ^[A-Za-z0-9._-]+\.ya?ml$ ]]; then
+              echo "::error::Ugyldig filnavn i deploy-workflow-filnavn: $filnavn"
+              exit 1
+            fi
+          done
+          for filnavn in "${filnavn_liste[@]}"; do
+            echo "Starter $filnavn på $BASE_REF"
+            gh workflow run "$filnavn" --ref "$BASE_REF" --repo "$REPO"
+          done
