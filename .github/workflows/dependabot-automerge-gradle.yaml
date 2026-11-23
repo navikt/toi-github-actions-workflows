@@ -38,7 +38,7 @@ jobs:
 
   automerge:
     needs: bygg
-    uses: navikt/toi-github-actions-workflows/.github/workflows/dependabot-automerge.yaml@v17 # zizmor: ignore[ref-confusion,unpinned-uses]
+    uses: navikt/toi-github-actions-workflows/.github/workflows/dependabot-automerge.yaml@v19 # zizmor: ignore[ref-confusion,unpinned-uses]
     with:
       deploy-workflow-filnavn: ${{ inputs.deploy-workflow-filnavn }}
     permissions:

@@ -91,7 +91,7 @@ concurrency:
 
 jobs:
   dependabot-automerge:
-    uses: navikt/toi-github-actions-workflows/.github/workflows/dependabot-automerge-gradle.yaml@v17
+    uses: navikt/toi-github-actions-workflows/.github/workflows/dependabot-automerge-gradle.yaml@v19
     with:
       java-version: '25'
       deploy-workflow-filnavn: deploy.yaml
@@ -143,7 +143,7 @@ jobs:
 
   automerge:
     needs: bygg
-    uses: navikt/toi-github-actions-workflows/.github/workflows/dependabot-automerge.yaml@v17
+    uses: navikt/toi-github-actions-workflows/.github/workflows/dependabot-automerge.yaml@v19
     with:
       deploy-workflow-filnavn: deploy.yaml
     permissions:
