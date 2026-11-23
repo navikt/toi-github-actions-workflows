@@ -59,6 +59,100 @@ Når flere apper deler repo trenger vi app-unike navn på artefaktene som inneho
 navnet sitt som parameter til både `lagre-docker-baseimage-digest.yaml` og `oppdater-docker-baseimage.yaml`. 
 Artefaktet heter da `baseimage-digest-<app-navn>`. 
 
+## Automerge av Dependabot-PR-er
+
+Dependabot lager PR-er med nye versjoner av avhengigheter. Patch- og minor-oppdateringer merges automatisk når bygget er grønt, og så starter deploy. Major-oppdateringer merger du manuelt.
+
+Automerge kjører bare når PR-en er laget av Dependabot og har nøyaktig én commit, signert av GitHub. Har noen pushet en fiks til PR-en, må den merges manuelt. Alle oppdateringene i PR-en må være patch eller minor. Kan automerge ikke avgjøre typen for én av dem, må PR-en merges manuelt.
+
+Merge queue støttes ikke. `GITHUB_TOKEN` kan ikke legge PR-er i køen, og med et annet token ville merge utløse `on: push` og dermed dobbel deploy.
+
+Automerge sjekker at det er samme commit som ble bygget, men ikke at `main` er uendret siden bygget. Merges to Dependabot-PR-er rett etter hverandre, kan kombinasjonen være utestet. Deploy-workflowen bygger og tester `main` på nytt før den lager imaget, så en feilende kombinasjon stopper der og blir ikke deployet.
+
+To felles workflows:
+* `dependabot-automerge-gradle.yaml` bygger PR-en med `./gradlew build` og merger. Bruk denne i Gradle-apper.
+* `dependabot-automerge.yaml` merger og starter deploy, men bygger ikke. Den passer for alle byggeverktøy, også frontend.
+
+### Gradle-app
+
+1. Kopier [maler/dependabot-gradle.yml](maler/dependabot-gradle.yml) til `.github/dependabot.yml` i appen. Dependabot kan ikke hente konfigurasjon fra et annet repo, så filen må ligge i hvert repo. Fjern `registries` hvis appen ikke henter pakker fra Nav-speilet. Har appen allerede en `dependabot.yml`, sammenlign med malen og behold appens egne `ignore`-regler.
+2. Legg til `.github/workflows/dependabot-automerge.yaml`:
+```yaml
+name: Dependabot automerge
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions: { }
+
+concurrency:
+  group: dependabot-automerge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  dependabot-automerge:
+    uses: navikt/toi-github-actions-workflows/.github/workflows/dependabot-automerge-gradle.yaml@v17
+    with:
+      java-version: '25'
+      deploy-workflow-filnavn: deploy.yaml
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+```
+En merge gjort med `GITHUB_TOKEN` utløser ikke `on: push`. Automerge starter derfor deploy-workflowen selv, og den må ha `workflow_dispatch` under `on:`. Automerge sjekker før merge at hver deploy-workflow finnes, er aktiv og har `workflow_dispatch`. Utelat `deploy-workflow-filnavn` hvis appen ikke skal deployes etter merge.
+
+Deploy-workflowen bør ha `concurrency` som kjører deployene i rekkefølge. Uten den kan en deploy av en eldre commit bli ferdig sist og rulle ut et eldre image:
+```yaml
+concurrency:
+  group: deploy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+```
+
+### Flere apper i ett Gradle-repo (monorepo)
+
+Når `settings.gradle.kts` i roten inkluderer alle appene, holder det med én `dependabot.yml` med `directory: "/"`. Den dekker alle subprosjekter og `buildSrc/build.gradle.kts`. Automerge bygger hele repoet.
+
+Dependabot oppdaterer ikke versjoner i convention plugins, f.eks. `buildSrc/src/main/kotlin/toi.common.gradle.kts`. Den leser bare avhengigheter fra `build.gradle.kts`, `settings.gradle.kts` og version catalog (`gradle/libs.versions.toml`). Skal Dependabot vedlikeholde versjonene, må de flyttes til en av disse.
+
+List deploy-workflowen til hver app i `deploy-workflow-filnavn`, én per linje:
+```yaml
+    with:
+      java-version: '25'
+      deploy-workflow-filnavn: |
+        deploy-app-a.yaml
+        deploy-app-b.yaml
+```
+Alle appene deployes etter hver merge. En endring i `buildSrc` eller et felles bibliotek kan treffe alle appene, så vi deployer heller én gang for mye enn å la en app stå på gamle versjoner. Klarer automerge ikke å starte én av dem, starter den likevel resten og feiler til slutt med navnet på den som må startes manuelt.
+
+### Andre byggeverktøy, for eksempel frontend
+
+Bygg og test i en egen jobb, og la automerge-jobben avhenge av den med `needs`. Uten `needs` merges PR-en uten at den er bygget.
+```yaml
+jobs:
+  bygg:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Appens egne byggesteg, f.eks. npm ci og npm test
+
+  automerge:
+    needs: bygg
+    uses: navikt/toi-github-actions-workflows/.github/workflows/dependabot-automerge.yaml@v17
+    with:
+      deploy-workflow-filnavn: deploy.yaml
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+```
+`dependabot.yml` lager du med `package-ecosystem: "npm"`. Ligger flere apper i samme repo, bruker du `directories`, f.eks. `directories: [ "/apps/*" ]`.
+
 
 
 # Versjonering
